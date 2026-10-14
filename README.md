@@ -27,9 +27,11 @@ dsh-mobile/
 │  ├─ install-toolchain.sh        # JDK 21 + Android cmdline-tools（装 ~/.local，不碰系统）
 │  ├─ build-apk.sh                # 一键构建（debug / --release 签名包）
 │  ├─ gen-keystore.sh             # 生成发布签名材料（存 ~/.secrets，不入库）
-│  ├─ acceptance.mjs              # 自动化验收（48 项）
+│  ├─ acceptance.mjs              # 自动化验收（52 项）
 │  ├─ check-anchors.mjs           # 移动插件 CSS 哈希漂移检测
 │  ├─ check-protocol-parity.mjs   # App/服务端/假手机三方 op 一致性检查
+│  ├─ probe-ws-auth.mjs           # 探测手机 WebSocket 鉴权门（4 种情况）
+│  ├─ restart-live.sh             # 延迟重启线上 dsh 并自动回滚
 │  └─ shoot.mjs                   # 无头截图 + 移动端布局诊断
 ```
 
@@ -59,9 +61,11 @@ tools/build-apk.sh --release             # 发布包（已签名，约 3.5 MB）
 ## 自动化验收
 
 ```bash
-node tools/acceptance.mjs                # 48 项：工具链 / APK 与清单 / bridge 自测 / op 一致性 / 单测 / DSH 接线 / 文档
+node tools/acceptance.mjs                # 52 项：工具链 / APK 与清单 / bridge 自测 / op 一致性 / 单测 / DSH 接线与部署 / 文档
 node tools/acceptance.mjs --skip-gradle  # 无 Android SDK 的机器上跳过构建相关检查
+node tools/acceptance.mjs --skip-dsh     # 跳过依赖本机 ~/.dsh 与 /etc 部署状态的检查
 node tools/check-protocol-parity.mjs     # 只跑 App / 服务端 / 假手机 的三方 op 一致性（9 项）
+node tools/probe-ws-auth.mjs             # 线上手机 WSS 鉴权门：无 Origin / 无 cookie / 假 cookie / 错 Origin（4 项）
 cd packages/mobile-shell/android && ./gradlew testDebugUnitTest   # 端点解析单测（10 项）
 ```
 
@@ -93,7 +97,8 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P3 原生能力 | **代码完成，待真机验证** |
 | P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，60/60 自测 + 9/9 op 一致性）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/files_open/call` |
 | P5 无 root 无障碍自动操作 | **代码完成，待真机联调**：`A11yService`（截图取控件树、点击/滑动/系统键，均在设备端执行）+ 应用 `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`，三重开关（App 内开关 + 系统无障碍 + 设备在线） |
-| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 48/48（含 10 项端点单测、9 项 op 一致性）；发布包 `1.0.1` 已签名（`~/.secrets`）；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
+| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 52/52（含 10 项端点单测、9 项 op 一致性、4 项线上部署断言）；发布包 `1.0.1` 已签名（`~/.secrets`）；bridge 已装成 systemd 单元、Caddy 已加 `/bridge/*`、线上 profile 已加 `mcp-phone`（**重启 dsh web 后 Agent 侧 `phone_*` 工具生效**）；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
+| 待用户参与 | ① 重启线上 dsh web（`tools/restart-live.sh` 延迟重启，40s 后自动执行）；② 按 [真机验收清单](docs/verification/device-checklist.md) 在手机上逐项验收 |
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
 
@@ -131,7 +136,9 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-r
 - 凭证只存网关 `dsh_gateway_token`，落盘用 AndroidKeyStore AES-GCM 封存，不进日志、不进 git。
 - 默认要求 HTTPS；局域网明文/自签证书需用户显式开启。
 - **手机桥**：MCP 端点只监听 `127.0.0.1:3082`；手机连 `/bridge/ws` 必须带网关 cookie，bridge 用
-  回环请求 `dsh-passwords` 网关核验（`200` 才算通过，`302/401` 一律拒），并校验 Origin；伪造 cookie 实测返回 401。
+  回环请求 `dsh-passwords` 网关核验（`200` 才算通过，`302/401` 一律拒），并校验 Origin。
+  线上经 Caddy 实测（`node tools/probe-ws-auth.mjs`，报告 `docs/verification/ws-auth.json`）：
+  无 Origin → 403、有 Origin 无 cookie → 401、假 cookie → 401、错 Origin → 403，4/4 符合预期。
 - **无障碍自动化**默认关闭，需「App 内开关 + 系统无障碍服务」两处都打开；关闭时工具立即返回明确错误。
 - 发布签名材料（keystore + 口令）存放在仓库外的 `~/.secrets`，`.gitignore` 覆盖 `*.jks`/`*.keystore`。
 - `phone_files_save` 只写 `Downloads/DSH`（MediaStore），不接受任意路径写入；`phone_files_open` 只打开 App 能授出读权限或 MediaStore 里的文件，不接受 shell 命令；`phone_apps` 只返回有启动器入口的应用。

@@ -203,6 +203,21 @@ for (const artifact of ['dsh-mobile-bridge.service', 'caddy-dsh-mobile.snippet',
 }
 
 if (!flags.has('--skip-dsh')) {
+  // Host-specific: assert the deployment described in docs/DEPLOY.md is actually
+  // in place, not just that the artifacts exist in the repo.
+  const installedUnit = '/etc/systemd/system/dsh-mobile-bridge.service'
+  const liveCaddy = '/etc/caddy/Caddyfile'
+  const livePatch = '~/.dsh/profiles/web/cordis.patch.yml'
+  check('deploy', 'bridge unit is installed system-wide', existsSync(installedUnit)
+    && readFileSync(installedUnit, 'utf8') === readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8'), installedUnit)
+  check('deploy', 'Caddy routes /bridge/* to the bridge', existsSync(liveCaddy) && /handle\s+\/bridge\/\*/.test(readFileSync(liveCaddy, 'utf8')), liveCaddy)
+  check('deploy', 'live profile carries the mcp-phone entry', existsSync(livePatch) && readFileSync(livePatch, 'utf8').includes('mcp-phone'), livePatch)
+  if (existsSync(livePatch)) {
+    check('deploy', 'live profile keeps an mcp-phone rollback copy', existsSync(`${livePatch}.rollback-no-mcp-phone`))
+  }
+}
+
+if (!flags.has('--skip-dsh')) {
   const patchFile = join(ROOT, 'deploy/dsh-profile-mcp-phone.yml')
   if (existsSync(patchFile)) {
     const dump = run(DSH_BIN, ['--profile', process.env.DSH_SPIKE_PROFILE ?? 'mobspike', '--patch', patchFile, '--dump-config'])

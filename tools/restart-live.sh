@@ -13,9 +13,12 @@
 #   1. restart the service, wait until 3080 (dsh web) and 3081 (dsh-passwords
 #      gateway, spawned inside the same cgroup) answer again;
 #   2. if dsh web does not come back within WAIT seconds, restore the profile's
-#      package.json without dsh-mobile-xc and restart again, so the user is
-#      never left with a dead DSH;
-#   3. append everything to docs/verification/last-restart.log.
+#      package.json without dsh-mobile-xc AND cordis.patch.yml without the
+#      mcp-phone entry, then restart again, so the user is never left with a
+#      dead DSH;
+#   3. report the phone bridge unit, its /healthz and a live MCP initialize
+#      handshake before and after the restart;
+#   4. append everything to docs/verification/last-restart.log.
 #
 # MODE=check probes health only and changes nothing.
 set -uo pipefail
@@ -24,6 +27,9 @@ UNIT=deepseek-harness.service
 PROFILE=~/.dsh/profiles/web
 PKG="$PROFILE/package.json"
 ROLLBACK="$PROFILE/package.json.rollback-no-mobile-xc"
+PATCH="$PROFILE/cordis.patch.yml"
+PATCH_ROLLBACK="$PROFILE/cordis.patch.yml.rollback-no-mcp-phone"
+BRIDGE_UNIT=dsh-mobile-bridge.service
 OUT=~/workspace/dsh-mobile/docs/verification/last-restart.log
 MODE="${MODE:-restart}"
 WAIT="${WAIT:-90}"
@@ -34,6 +40,13 @@ exec >>"$OUT" 2>&1
 log() { echo "[$(date -Is)] $*"; }
 web_code() { curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3080/ 2>/dev/null || echo 000; }
 gw_ok() { curl -s --max-time 5 http://127.0.0.1:3081/gateway/healthz 2>/dev/null | grep -q '"ok":true'; }
+bridge_ok() { curl -s --max-time 5 http://127.0.0.1:3082/healthz 2>/dev/null | grep -q '"ok":true'; }
+mcp_ok() {
+  curl -s --max-time 8 -X POST http://127.0.0.1:3082/mcp \
+    -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"restart-live","version":"0"}}}' \
+    2>/dev/null | grep -q '"serverInfo"'
+}
 
 wait_up() {
   local i j code
@@ -56,11 +69,13 @@ wait_up() {
 
 summarize() {
   log "state: unit=$(systemctl is-active "$UNIT") web=$(web_code) gateway=$(gw_ok && echo ok || echo down) pid=$(systemctl show -p MainPID --value "$UNIT")"
+  log "bridge: unit=$(systemctl is-active "$BRIDGE_UNIT") healthz=$(bridge_ok && echo ok || echo down) mcp=$(mcp_ok && echo ok || echo down)"
 }
 
 log "=== restart-live start (mode=$MODE) ==="
 summarize
 log "profile bundles: $(python3 -c "import json;print(','.join(json.load(open('$PKG'))['dsh']['profile']['bundles']))" 2>/dev/null)"
+log "mcp patch: $(grep -c 'mcp-phone' "$PATCH" 2>/dev/null || echo 0) mcp-phone entries in $PATCH"
 
 if [ "$MODE" = "check" ]; then
   if wait_up; then log "RESULT: CHECK OK (no change made)"; else log "RESULT: CHECK FAILED"; fi
@@ -76,18 +91,32 @@ if wait_up; then
   exit 0
 fi
 
-log "RESULT: FAILED — rolling back dsh-mobile-xc (restoring package.json without it)"
+log "RESULT: FAILED — rolling back dsh-mobile-xc and the mcp-phone MCP entry"
+ROLLED_BACK=0
 if [ -f "$ROLLBACK" ]; then
   cp -v "$ROLLBACK" "$PKG"
+  ROLLED_BACK=1
+else
+  log "ERROR: rollback file $ROLLBACK missing — leaving package.json as is"
+fi
+if [ -f "$PATCH_ROLLBACK" ]; then
+  cp -v "$PATCH_ROLLBACK" "$PATCH"
+  ROLLED_BACK=1
+else
+  log "WARN: $PATCH_ROLLBACK missing — mcp-phone stays in $PATCH"
+fi
+
+if [ "$ROLLED_BACK" = "1" ]; then
   systemctl restart "$UNIT"
   log "rollback restart -> rc=$?"
   if wait_up; then
     summarize
-    log "RESULT: ROLLED BACK — service healthy, mobile UI plugin inactive"
+    log "RESULT: ROLLED BACK — service healthy, mobile UI plugin and phone MCP inactive"
   else
     summarize
     log "RESULT: CRITICAL — service still down; run: journalctl -u $UNIT -n 200 --no-pager"
   fi
 else
-  log "ERROR: rollback file $ROLLBACK missing — manual fix required"
+  summarize
+  log "RESULT: CRITICAL — nothing to roll back; run: journalctl -u $UNIT -n 200 --no-pager"
 fi

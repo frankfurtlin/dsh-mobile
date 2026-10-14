@@ -5,7 +5,38 @@
 > 所有命令都在服务器（本仓库所在机器）上执行，除非标注"手机"。
 > 产物清单位于 `deploy/`，源码位于 `packages/bridge-server/` 与 `packages/mobile-shell/`。
 
-## 0. 前置检查
+## 0. 本机部署现状（2026-10-15）
+
+| 项 | 状态 | 证据/命令 |
+|---|---|---|
+| bridge 服务 | **已装并运行** | `systemctl is-active dsh-mobile-bridge` → active；`curl -s http://127.0.0.1:3082/healthz` → `{"ok":true,...,"phones":0}` |
+| Caddy 路由 | **已加** | `/etc/caddy/Caddyfile` 含 `handle /bridge/*`；`caddy validate` 通过；Caddy 已重启加载（本机 Caddyfile 带 `admin off`，`caddy reload` 不可用） |
+| 线上 profile MCP 接入 | **已写入，待重启生效** | `~/.dsh/profiles/web/cordis.patch.yml` 含 `mcp-phone`；回滚副本 `cordis.patch.yml.rollback-no-mcp-phone` |
+| 手机 WSS 鉴权门（公网实测） | **4/4 符合预期** | `node tools/probe-ws-auth.mjs` → 无 Origin 403 / 无 cookie 401 / 假 cookie 401 / 错 Origin 403 |
+| dsh web 重启（让 `phone_*` 工具出现） | **待执行** | 见下方「0.1 延迟重启」 |
+
+## 0.1 让 Agent 侧 `phone_*` 工具生效（延迟重启）
+
+重启会中断当前 dsh web 进程（也就是当前 GUI 会话与本 agent），所以用 `systemd-run` 在延迟后执行，
+并把结果写进 `docs/verification/last-restart.log`：
+
+```bash
+systemd-run --unit=dsh-mobile-restart-live --on-active=40 --collect \
+  bash ~/workspace/dsh-mobile/tools/restart-live.sh
+```
+
+脚本行为：重启 `deepseek-harness.service` → 等 3080/3081 恢复 → 打印 bridge 单元、`/healthz` 与一次真实
+MCP `initialize` 握手 → 失败则自动恢复 `package.json`（去掉 `dsh-mobile-xc`）与 `cordis.patch.yml`
+（去掉 `mcp-phone`）并再次重启。只想检查不改动时：`MODE=check bash tools/restart-live.sh`。
+
+重启后验证（新会话里）：
+
+```bash
+journalctl -u dsh-mobile-bridge -n 20 --no-pager | grep -i "mcp\|initialize"
+tail -12 ~/workspace/dsh-mobile/docs/verification/last-restart.log
+```
+
+## 0.2 前置检查
 
 ```bash
 # 线上 dsh web 与网关在跑

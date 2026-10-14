@@ -8,7 +8,7 @@
 | `packages/mobile-shell/android/app/build/outputs/apk/debug/app-debug.apk` | 调试包（自签名 debug key，可随时覆盖安装） |
 | `packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk` | 发布包 `1.0.1`（versionCode 2，用 `~/.secrets/dsh-mobile-release.jks` 签名），3,632,901 B，sha256 `107bb69c0231909d…` |
 | `packages/bridge-server/` | Agent ↔ 手机桥（MCP over Streamable HTTP + 手机 WSS，19 个 `phone_*` 工具） |
-| `tools/` | `install-toolchain.sh`、`build-apk.sh`、`gen-keystore.sh`、`acceptance.mjs`、`check-anchors.mjs`、`check-protocol-parity.mjs`、`shoot.mjs` |
+| `tools/` | `install-toolchain.sh`、`build-apk.sh`、`gen-keystore.sh`、`acceptance.mjs`、`check-anchors.mjs`、`check-protocol-parity.mjs`、`probe-ws-auth.mjs`、`restart-live.sh`、`shoot.mjs` |
 | `deploy/` | systemd 单元、Caddy 片段、DSH profile 的 MCP patch |
 | `docs/` | PLAN / DEPLOY / ROLLBACK / 本文件 / ADR-0001–0004 / 验证报告 |
 | `docs/verification/` | 自动化验收 JSON 与移动端布局截图 |
@@ -46,15 +46,18 @@ aapt2 dump badging  packages/mobile-shell/android/app/build/outputs/apk/release/
 ## 3. 自动化验收
 
 ```bash
-node tools/acceptance.mjs                      # 全部检查（当前 48/48）；结果写 docs/verification/acceptance-<时间戳>.json
+node tools/acceptance.mjs                      # 全部检查（当前 52/52）；结果写 docs/verification/acceptance-<时间戳>.json
 node tools/acceptance.mjs --skip-gradle        # 跳过需要 Android SDK 的检查（CI / 无工具链机器）
+node tools/acceptance.mjs --skip-dsh           # 跳过依赖本机 ~/.dsh 与 /etc 部署状态的检查
 node tools/check-protocol-parity.mjs           # App / 服务端 / 假手机 三方 op 一致性（当前 9/9）
+node tools/probe-ws-auth.mjs                   # 公网手机 WSS 鉴权门（当前 4/4）
 ```
 
 覆盖：工具链可用性 → APK 产物存在 + release 签名校验 → APK 清单（5 个组件 / 无障碍权限 / 前台服务类型 /
 包可见性 `<queries>`）→ bridge 端到端自测（`60/60`）+ 19 个工具 + op 一致性（`9/9`）+ DSH 同款 MCP SDK
 客户端连通 → App 侧 JVM 单测（`10/10`，端点解析）→ DSH 侧配置（web profile 已装 `dsh-mobile-xc`、
-deploy 产物齐全、MCP patch 能被 `dsh --dump-config` 解析）→ 文档齐备。
+deploy 产物齐全、MCP patch 能被 `dsh --dump-config` 解析、**线上 bridge 单元 / Caddy `/bridge/*` 路由 /
+profile `mcp-phone` 与回滚副本已就位**）→ 文档齐备。
 
 移动端 Web 适配的回归（需图形环境）：
 
