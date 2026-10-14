@@ -2,6 +2,39 @@
 <resources>
     <string name="app_name">DSH Mobile</string>
     <string name="title_activity_main">DSH Mobile</string>
+    <string name="title_activity_setup">连接服务器</string>
     <string name="package_name">top.frankfurtlin.dshmobile</string>
     <string name="custom_url_scheme">top.frankfurtlin.dshmobile</string>
+
+    <!-- Setup -->
+    <string name="setup_title">连接到你的 DSH 服务器</string>
+    <string name="setup_hint">只需要填服务器地址。App 会打开该服务器的 dsh-passwords 登录页，
+        用你在那台机器上的账号登录，登录凭证只加密保存在本机。</string>
+    <string name="setup_endpoint_hint">https://dsh.example.com</string>
+    <string name="setup_allow_insecure">允许 HTTP / 自签证书（不安全，仅局域网调试用）</string>
+    <string name="setup_connect">连接并登录</string>
+    <string name="setup_save_anyway">仍然保存并继续</string>
+    <string name="setup_security_note">登录凭证（网关 token）用 Android Keystore 加密后存在本机，
+        不会上传到任何第三方，也不会出现在日志里。</string>
+    <string name="setup_probing">正在探测 %1$s …</string>
+    <string name="setup_error_bad_url">地址无法解析，请输入形如 https://dsh.example.com 的地址。</string>
+    <string name="setup_error_http_needs_optin">这是明文 http 地址，请勾选上面的「允许 HTTP / 自签证书」。</string>
+    <string name="setup_error_unreachable">连不上服务器：%1$s\n请检查地址、网络和服务器是否在跑。</string>
+    <string name="setup_error_not_gateway">%1$s 上没找到 dsh-passwords 网关（HTTP %2$s）。
+        请确认这是 DSH 的网关地址；也可以直接继续试试。</string>
+    <string name="setup_error_http_status">服务器返回 HTTP %1$s。</string>
+
+    <!-- Main -->
+    <string name="action_refresh">刷新</string>
+    <string name="action_change_server">更换服务器</string>
+    <string name="action_logout">退出登录</string>
+    <string name="action_retry">重试</string>
+    <string name="press_back_again">再按一次返回键退出</string>
+    <string name="download_started">已开始下载，见通知栏</string>
+    <string name="error_load_failed">加载失败（%1$s）：%2$s</string>
+    <string name="error_load_failed_short">页面加载失败。请检查网络和你填写的服务器地址。</string>
+    <string name="error_ssl">证书校验失败。若这是局域网自签证书，请在设置页开启「允许 HTTP / 自签证书」。</string>
+    <string name="error_no_browser">没有可以打开链接的应用</string>
+    <string name="error_no_file_picker">没有可用的文件选择器</string>
+    <string name="error_download">下载失败</string>
 </resources>

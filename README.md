@@ -68,9 +68,9 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 
 | 阶段 | 状态 |
 |---|---|
-| P0 工具链 + Capacitor 骨架 | 工具链完成；Android 工程已生成，首次 `assembleDebug` 构建中 |
-| P1 移动端 UI 选型 | **已完成**：选定 `dsh-mobile-xc`，回退 `@qingshanyuluo/dsh-client-ui-mobile` |
-| P2 App 骨架 + endpoint 登录 | 未开始 |
+| P0 工具链 + Android 工程 | **完成**：JDK 21 + Android SDK 35 在 `~/.local/android`，`assembleDebug` 可构建 |
+| P1 移动端 UI 选型 + 线上安装 | **完成**：选定 `dsh-mobile-xc`（回退 `@qingshanyuluo/dsh-client-ui-mobile`）；已装进 `web` profile，**重启 dsh web 后生效** |
+| P2 App 骨架 + endpoint 登录 | **代码完成，待真机验证**：调试 APK 已产出 |
 | P3 原生能力 | 未开始 |
 | P4 Agent ↔ 手机桥 | 未开始 |
 | P5 无 root 无障碍自动操作 | 未开始 |
@@ -78,8 +78,19 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
 
+## 装到手机
+
+```bash
+cd ~/workspace/dsh-mobile
+tools/build-apk.sh                       # → packages/mobile-shell/android/app/build/outputs/apk/debug/app-debug.apk
+adb install -r packages/mobile-shell/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+首次启动只填 endpoint（如 `https://dsh.example.com`），App 会 `GET /gateway/healthz`
+探活并打开网关登录页；登录后凭证加密落盘，杀进程重开免登录（服务端 cookie 12h 有效期）。
+
 ## 安全
 
-- 凭证只存网关 `dsh_gateway_token`，落盘用 Android `EncryptedSharedPreferences`，不进日志、不进 git。
+- 凭证只存网关 `dsh_gateway_token`，落盘用 AndroidKeystore AES-GCM 封存，不进日志、不进 git。
 - 默认要求 HTTPS；局域网明文/自签证书需用户显式开启。
 - `phone.*` 工具受路径白名单 + App 内确认约束。
