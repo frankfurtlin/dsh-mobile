@@ -11,9 +11,10 @@
 |---|---|---|
 | bridge 服务 | **已装并运行** | `systemctl is-active dsh-mobile-bridge` → active；`curl -s http://127.0.0.1:3082/healthz` → `{"ok":true,...,"phones":0}` |
 | Caddy 路由 | **已加** | `/etc/caddy/Caddyfile` 含 `handle /bridge/*`；`caddy validate` 通过；Caddy 已重启加载（本机 Caddyfile 带 `admin off`，`caddy reload` 不可用） |
-| 线上 profile MCP 接入 | **已写入，待重启生效** | `~/.dsh/profiles/web/cordis.patch.yml` 含 `mcp-phone`；回滚副本 `cordis.patch.yml.rollback-no-mcp-phone` |
+| 线上 profile MCP 接入 | **已生效（无需重启）** | `~/.dsh/profiles/web/cordis.patch.yml` 含 `mcp-phone`（serverName `phone` → `http://127.0.0.1:3082/mcp`）；本会话里 `phone_list`/`phone_ping` 已可用；回滚副本 `cordis.patch.yml.rollback-no-mcp-phone` |
+| 移动端 UI 插件 | **已生效** | `package.json` 的 `dsh.profile.bundles` 含 `dsh-mobile-xc`；23:18 重启成功（见 `docs/verification/last-restart.log`） |
 | 手机 WSS 鉴权门（公网实测） | **4/4 符合预期** | `node tools/probe-ws-auth.mjs` → 无 Origin 403 / 无 cookie 401 / 假 cookie 401 / 错 Origin 403 |
-| dsh web 重启（让 `phone_*` 工具出现） | **待执行** | 见下方「0.1 延迟重启」 |
+| dsh web 重启 | **已完成（23:18，无需再做）** | `docs/verification/last-restart.log` → `RESULT: SUCCESS`，之后又跑过一次 `MODE=check` 校验 |
 
 ## 0.1 让 Agent 侧 `phone_*` 工具生效（延迟重启）
 
@@ -35,6 +36,23 @@ MCP `initialize` 握手 → 失败则自动恢复 `package.json`（去掉 `dsh-m
 journalctl -u dsh-mobile-bridge -n 20 --no-pager | grep -i "mcp\|initialize"
 tail -12 ~/workspace/dsh-mobile/docs/verification/last-restart.log
 ```
+
+## 0.1b 升级到 1.0.2（文件浏览）后要做什么
+
+`fs.*` 是**新增的 op**：App 与服务端必须同时升级，否则一致性检查会失败。
+
+```bash
+# 1) 服务端：让 bridge 重新加载 src/tools.js（新增 5 个 fs 工具）
+systemctl restart dsh-mobile-bridge
+curl -s http://127.0.0.1:3082/healthz                      # {"ok":true,...}
+cd ~/workspace/dsh-mobile && node tools/check-protocol-parity.mjs   # 9/9
+# 2) 手机端：安装 1.0.2 release APK（覆盖安装即可，profile 不变）
+#    adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk
+# 3) 手机上：App 菜单 →「选择可浏览的文件夹」，把要交给 Agent 的文件夹选上
+```
+
+`systemctl restart dsh-mobile-bridge` **不会**影响线上 dsh web / 当前会话（两者是不同 systemd 单元）；
+只有 `deepseek-harness.service` 的重启才会中断本会话。
 
 ## 0.2 前置检查
 

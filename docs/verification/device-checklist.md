@@ -76,6 +76,23 @@ App 版本：0.1.0（versionCode 1）       验收日期：__________
 | 5.10 | 综合任务：让 Agent"打开某 App 并点击某按钮" | 全流程在对话里完成，不需要人手 | |
 | 5.11 | 关掉 App 内"允许 Agent 使用"开关后再调 | 立刻拒绝（明确错误） | |
 
+## P7 文件浏览（用户授权文件夹）
+
+前置：App 已升级到 `1.0.2`（含 `fs.*` op）；bridge 已用新代码重启（`systemctl restart dsh-mobile-bridge`）。
+
+| # | 步骤 | 期望 | 实测 |
+|---|---|---|---|
+| 7.1 | App 菜单 →「选择可浏览的文件夹」 | 系统文件夹选择器出现；选「文档」后提示已授权，再打开菜单显示当前文件夹名 | |
+| 7.2 | 让 Agent 调 `phone_fs_roots` | 返回两个根：`tree:`（label 为刚才选的文件夹）与 `downloads:` | |
+| 7.3 | 让 Agent 调 `phone_fs_list {path:"tree:/"}` | 条目与手机文件管理器里该文件夹一致（含目录/文件、大小、时间） | |
+| 7.4 | 新建一个 txt 放进该文件夹，让 Agent 调 `phone_fs_read {path:"tree:/xxx.txt"}` | 返回 `encoding:"utf8"` 与正确内容 | |
+| 7.5 | 让 Agent 调 `phone_fs_write {path:"tree:/notes/hello.md", data:"# hi"}` | 文件出现在文件管理器里，内容正确，父目录被自动创建 | |
+| 7.6 | 让 Agent 调 `phone_fs_mkdir {path:"tree:/notes/2026"}` | 目录出现 | |
+| 7.7 | ⚠️ 越界测试：`phone_fs_read {path:"tree:/../etc/passwd"}` | 明确失败（越界被拒），**不**返回任何文件内容 | |
+| 7.8 | ⚠️ 其他寻址方式：`phone_fs_list {path:"/sdcard"}`、`content://...`、`file://...` | 均明确失败（只接受 `tree:` / `downloads:` 前缀） | |
+| 7.9 | 杀掉 App 再打开 → 调 `phone_fs_roots`；然后菜单「清除授权」→ 再调一次 | 重启后 `tree:` 仍在（持久授权）；清除后 `tree:` 消失 | |
+| 7.10 | 不做任何授权，直接 `phone_fs_write {path:"downloads:/hello.txt", data:"hi"}` | 成功（`Downloads/DSH` 根始终可用） | |
+
 ## 移动端 Web 样式（P1 回归）
 
 | # | 步骤 | 期望 | 实测 |
@@ -89,7 +106,7 @@ App 版本：0.1.0（versionCode 1）       验收日期：__________
 ```
 P2 endpoint 登录：____/9        P3 原生体验：____/13
 P4 手机桥：____/11              P5 无障碍：____/11
-Web 样式回归：____/3
+P7 文件浏览：____/10            Web 样式回归：____/3
 阻断项（必须修复才能交付）：______________________________________
 后续项（可改进，不阻断）：________________________________________
 ```
