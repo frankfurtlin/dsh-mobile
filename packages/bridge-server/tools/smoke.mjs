@@ -60,18 +60,19 @@ async function rpc(method, params) {
  *
  * @param {string} name tool name
  * @param {Record<string, unknown>} args tool arguments
- * @returns {Promise<{ isError: boolean, text: string, parsed: any }>} result
+ * @returns {Promise<{ isError: boolean, text: string, parsed: any, content: any[] }>} result
  */
 async function callTool(name, args) {
   const { body } = await rpc('tools/call', { name, arguments: args })
-  const text = body?.result?.content?.[0]?.text ?? ''
+  const content = body?.result?.content ?? []
+  const text = content.find((b) => b.type === 'text')?.text ?? ''
   let parsed = null
   try {
     parsed = JSON.parse(text)
   } catch {
     parsed = null
   }
-  return { isError: Boolean(body?.result?.isError), text, parsed }
+  return { isError: Boolean(body?.result?.isError), text, parsed, content }
 }
 
 console.log('MCP handshake')
@@ -90,7 +91,26 @@ console.log('Tool discovery')
 const listed = await rpc('tools/list', {})
 const names = (listed.body?.result?.tools ?? []).map((t) => t.name)
 check('tools/list answers 200', listed.status === 200)
-for (const expected of ['phone_list', 'phone_info', 'phone_ping', 'phone_shares', 'phone_clipboard_get', 'phone_clipboard_set', 'phone_notify', 'phone_open', 'phone_files_save', 'phone_call']) {
+for (const expected of [
+  'phone_list',
+  'phone_info',
+  'phone_ping',
+  'phone_shares',
+  'phone_clipboard_get',
+  'phone_clipboard_set',
+  'phone_notify',
+  'phone_open',
+  'phone_files_save',
+  'phone_a11y_status',
+  'phone_apps',
+  'phone_launch',
+  'phone_ui_tree',
+  'phone_screenshot',
+  'phone_tap',
+  'phone_swipe',
+  'phone_global',
+  'phone_call',
+]) {
   check(`tools/list includes ${expected}`, names.includes(expected), names.join(','))
 }
 check('every tool declares an input schema', (listed.body?.result?.tools ?? []).every((t) => t.inputSchema?.type === 'object'))
@@ -115,6 +135,32 @@ check('phone_files_save returns a content uri', String(saved.parsed?.uri ?? '').
 check('phone received the files.save call', phone.calls.some((c) => c.op === 'files.save' && c.args?.name === 'report.pdf'), JSON.stringify(phone.calls.map((c) => c.op)))
 const noSource = await callTool('phone_files_save', { name: 'x.txt' })
 check('phone_files_save rejects a missing source', noSource.isError, noSource.text)
+
+console.log('Apps and automation')
+const apps = await callTool('phone_apps', {})
+check('phone_apps lists the launcher apps', apps.parsed?.count === 2, apps.text)
+const launched = await callTool('phone_launch', { package: 'com.example.notes' })
+check('phone_launch forwards the package', launched.parsed?.ok === true && launched.parsed?.package === 'com.example.notes', launched.text)
+check('phone received the apps.launch call', phone.calls.some((c) => c.op === 'apps.launch' && c.args?.package === 'com.example.notes'), JSON.stringify(phone.calls.map((c) => c.op)))
+const a11y = await callTool('phone_a11y_status', {})
+check('phone_a11y_status reports the service ready', a11y.parsed?.service === true && a11y.parsed?.allowed === true, a11y.text)
+const tree = await callTool('phone_ui_tree', { max_nodes: 50 })
+check('phone_ui_tree returns the screen nodes', tree.parsed?.count === 2 && tree.parsed?.nodes?.[1]?.center?.[0] === 540, tree.text)
+check('phone received the a11y.tree call', phone.calls.some((c) => c.op === 'a11y.tree' && c.args?.max_nodes === 50), JSON.stringify(phone.calls.map((c) => c.op)))
+const shot = await callTool('phone_screenshot', {})
+check('phone_screenshot returns an image content block', shot.content.some((b) => b.type === 'image' && b.mimeType === 'image/jpeg' && b.data === 'ZmFrZS1qcGVn'), JSON.stringify(shot.content))
+check('phone_screenshot keeps the pixel size in text', shot.parsed?.width === 1080 && shot.parsed?.height === 2400, shot.text)
+const tapped = await callTool('phone_tap', { x: 540.4, y: 240.6 })
+check('phone_tap rounds to whole pixels', tapped.parsed?.ok === true, tapped.text)
+check('phone received the rounded tap', phone.calls.some((c) => c.op === 'a11y.tap' && c.args?.x === 540 && c.args?.y === 241), JSON.stringify(phone.calls.filter((c) => c.op === 'a11y.tap')))
+const badTap = await callTool('phone_tap', { x: 'left' })
+check('phone_tap rejects a non-numeric point', badTap.isError, badTap.text)
+const swiped = await callTool('phone_swipe', { x1: 540, y1: 1800, x2: 540, y2: 400, duration_ms: 250 })
+check('phone_swipe succeeds', swiped.parsed?.ok === true, swiped.text)
+const home = await callTool('phone_global', { action: 'home' })
+check('phone_global presses home', home.parsed?.ok === true, home.text)
+const badGlobal = await callTool('phone_global', { action: 'self-destruct' })
+check('phone_global rejects an unknown action', badGlobal.isError, badGlobal.text)
 
 console.log('Failure paths')
 const ghost = await callTool('phone_list', { device: 'ghost' })

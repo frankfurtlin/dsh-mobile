@@ -72,8 +72,8 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P1 移动端 UI 选型 + 线上安装 | **完成**：选定 `dsh-mobile-xc`（回退 `@qingshanyuluo/dsh-client-ui-mobile`）；已装进 `web` profile，**重启 dsh web 后生效** |
 | P2 App 骨架 + endpoint 登录 | **代码完成，待真机验证**：调试 APK 已产出 |
 | P3 原生能力 | **代码完成，待真机验证** |
-| P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，33/33 自测）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/call` |
-| P5 无 root 无障碍自动操作 | 未开始 |
+| P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，55/55 自测）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/call` |
+| P5 无 root 无障碍自动操作 | **代码完成，待真机联调**：`A11yService`（截图取控件树、点击/滑动/系统键，均在设备端执行）+ 应用 `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`，三重开关（App 内开关 + 系统无障碍 + 设备在线） |
 | P6 验证/签名/交付 | 未开始 |
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
@@ -101,6 +101,7 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/debug/app-deb
 | 剪贴板 | `DshMobile.copyText/getClipboard` |
 | 屏幕常亮 | 菜单开关 + `DshMobile.setKeepAwake(bool)`，长回答流式期间不被息屏打断 |
 | 手机桥 | App 前台服务保持一条已认证 WSS `/bridge/ws`；Agent 侧经 MCP 工具 `phone_*` 访问手机（剪贴板读写、通知、打开链接、保存文件到 Downloads/DSH、通用直通 `phone_call`）；`DshMobile.bridgeStatus()` 可查连接状态 |
+| 无障碍自动化 | 手机端 `A11yService` 在设备上执行：`phone_ui_tree` 读控件树（含 tap 中心点）、`phone_screenshot` 截图、`phone_tap`/`phone_swipe`/`phone_global` 操作、`phone_apps`/`phone_launch` 打开应用；需用户在 App 内打开开关并在系统设置里启用该服务 |
 | JS bridge | `DshMobile.getEndpoint/getAppVersion/openExternal/copyText/getClipboard/setKeepAwake/keepAwake/shares/saveBase64/bridgeStatus` |
 
 ## 安全

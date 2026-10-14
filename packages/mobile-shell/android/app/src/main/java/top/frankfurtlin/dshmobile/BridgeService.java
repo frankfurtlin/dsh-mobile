@@ -208,7 +208,7 @@ public class BridgeService extends Service {
   // ----- operations --------------------------------------------------------
 
   /** Operations this phone answers today; sent in `hello`. */
-  private static final String[] CAPS = { "ping", "info", "shares", "clipboard.get", "clipboard.set", "notify", "open", "files.save", "files.open" };
+  private static final String[] CAPS = { "ping", "info", "shares", "clipboard.get", "clipboard.set", "notify", "open", "files.save", "files.open", "apps.list", "apps.launch", "a11y.status", "a11y.tree", "a11y.screenshot", "a11y.tap", "a11y.swipe", "a11y.global" };
 
   private void handleCall(WebSocket webSocket, String id, String op, JSONObject args) {
     try {
@@ -327,6 +327,83 @@ public class BridgeService extends Service {
           reply(webSocket, id, true, saved.toJson(), null);
           return;
         }
+        case "apps.list": {
+          JSONObject data = new JSONObject();
+          data.put("apps", launcherApps());
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "apps.launch": {
+          String pkg = args == null ? null : args.optString("package", null);
+          if (pkg == null || pkg.isEmpty()) {
+            reply(webSocket, id, false, null, "apps.launch needs a package");
+            return;
+          }
+          launchPackage(pkg);
+          JSONObject data = new JSONObject();
+          data.put("ok", true);
+          data.put("package", pkg);
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "a11y.status": {
+          JSONObject data = new JSONObject();
+          data.put("service", A11yService.ready());
+          data.put("allowed", new Settings(this).a11yEnabled());
+          data.put("sdk", Build.VERSION.SDK_INT);
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "a11y.tree": {
+          requireA11y();
+          int maxNodes = args == null ? 400 : args.optInt("max_nodes", 400);
+          JSONObject data = new JSONObject();
+          data.put("tree", new JSONObject(A11yService.instance.tree(Math.max(1, Math.min(maxNodes, 2000)))));
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "a11y.screenshot": {
+          requireA11y();
+          int maxBytes = args == null ? 0 : args.optInt("max_bytes", 0);
+          JSONObject data = new JSONObject(A11yService.instance.screenshot(maxBytes));
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "a11y.tap": {
+          requireA11y();
+          int x = args == null ? 0 : args.optInt("x", 0);
+          int y = args == null ? 0 : args.optInt("y", 0);
+          boolean ok = A11yService.instance.tap(x, y);
+          JSONObject data = new JSONObject();
+          data.put("ok", ok);
+          data.put("x", x);
+          data.put("y", y);
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "a11y.swipe": {
+          requireA11y();
+          int x1 = args == null ? 0 : args.optInt("x1", 0);
+          int y1 = args == null ? 0 : args.optInt("y1", 0);
+          int x2 = args == null ? 0 : args.optInt("x2", 0);
+          int y2 = args == null ? 0 : args.optInt("y2", 0);
+          int duration = args == null ? 300 : args.optInt("duration_ms", 300);
+          boolean ok = A11yService.instance.swipe(x1, y1, x2, y2, duration);
+          JSONObject data = new JSONObject();
+          data.put("ok", ok);
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "a11y.global": {
+          requireA11y();
+          String action = args == null ? null : args.optString("action", null);
+          boolean ok = A11yService.instance.global(action);
+          JSONObject data = new JSONObject();
+          data.put("ok", ok);
+          data.put("action", action);
+          reply(webSocket, id, true, data, null);
+          return;
+        }
         default:
           reply(webSocket, id, false, null, "unknown op " + op);
       }
@@ -348,6 +425,49 @@ public class BridgeService extends Service {
     } catch (Exception e) {
       Log.w(TAG, "reply failed", e);
     }
+  }
+
+  // ----- apps and accessibility --------------------------------------------
+
+  /** Launcher apps only: package visibility is scoped by the manifest `<queries>` block. */
+  private JSONArray launcherApps() {
+    android.content.pm.PackageManager pm = getPackageManager();
+    android.content.Intent main = new android.content.Intent(android.content.Intent.ACTION_MAIN)
+      .addCategory(android.content.Intent.CATEGORY_LAUNCHER);
+    java.util.List<android.content.pm.ResolveInfo> resolved = pm.queryIntentActivities(main, 0);
+    java.util.TreeMap<String, String> byPackage = new java.util.TreeMap<>();
+    for (android.content.pm.ResolveInfo info : resolved) {
+      if (info.activityInfo == null) continue;
+      String pkg = info.activityInfo.packageName;
+      if (byPackage.containsKey(pkg)) continue;
+      CharSequence label = info.loadLabel(pm);
+      byPackage.put(pkg, label == null ? pkg : label.toString());
+    }
+    JSONArray out = new JSONArray();
+    for (java.util.Map.Entry<String, String> entry : byPackage.entrySet()) {
+      JSONObject app = new JSONObject();
+      try {
+        app.put("package", entry.getKey());
+        app.put("label", entry.getValue());
+      } catch (Exception ignored) {
+        // Plain string fields cannot fail; the loop keeps its shape for the compiler.
+      }
+      out.put(app);
+    }
+    return out;
+  }
+
+  private void launchPackage(String pkg) {
+    android.content.Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
+    if (intent == null) throw new IllegalStateException("no launchable activity for " + pkg);
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    startActivity(intent);
+  }
+
+  /** Automation is refused unless the user switched it on in the app AND in Android settings. */
+  private void requireA11y() {
+    if (!new Settings(this).a11yEnabled()) throw new IllegalStateException("accessibility automation is switched off in DSH Mobile");
+    if (!A11yService.ready()) throw new IllegalStateException("the Android accessibility service is not enabled for DSH Mobile");
   }
 
   // ----- payload sources for files.save ------------------------------------

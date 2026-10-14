@@ -13,7 +13,25 @@
 import { randomUUID } from 'node:crypto'
 
 /** Operations a v1 phone implements. */
-export const KNOWN_OPS = Object.freeze(['ping', 'info', 'shares', 'clipboard.get', 'clipboard.set', 'notify', 'open', 'files.save', 'files.open'])
+export const KNOWN_OPS = Object.freeze([
+  'ping',
+  'info',
+  'shares',
+  'clipboard.get',
+  'clipboard.set',
+  'notify',
+  'open',
+  'files.save',
+  'files.open',
+  'apps.list',
+  'apps.launch',
+  'a11y.status',
+  'a11y.tree',
+  'a11y.screenshot',
+  'a11y.tap',
+  'a11y.swipe',
+  'a11y.global',
+])
 
 /**
  * Live phone registry.

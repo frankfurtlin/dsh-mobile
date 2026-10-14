@@ -145,6 +145,124 @@ export function createTools(phones) {
       },
     },
     {
+      name: 'phone_a11y_status',
+      description: 'Report whether the phone can be driven by accessibility automation: whether the Android service is on and whether the user allows it.',
+      inputSchema: { type: 'object', properties: { ...DEVICE_PROPERTY }, additionalProperties: false },
+      async handler(args) {
+        return await phones.call(args.device, 'a11y.status', {})
+      },
+    },
+    {
+      name: 'phone_apps',
+      description: 'List the apps on the phone that can be launched from its home screen. Call this before phone_launch.',
+      inputSchema: { type: 'object', properties: { ...DEVICE_PROPERTY }, additionalProperties: false },
+      async handler(args) {
+        const data = await phones.call(args.device, 'apps.list', {})
+        return { count: data?.apps?.length ?? 0, apps: data?.apps ?? [] }
+      },
+    },
+    {
+      name: 'phone_launch',
+      description: 'Launch an app on the phone by its package name, taken from phone_apps.',
+      inputSchema: {
+        type: 'object',
+        properties: { ...DEVICE_PROPERTY, package: { type: 'string', description: 'Android package name, for example com.tencent.mm.' } },
+        required: ['package'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        return await phones.call(args.device, 'apps.launch', { package: String(args.package) })
+      },
+    },
+    {
+      name: 'phone_ui_tree',
+      description:
+        'Read the controls currently on the phone screen: text, content description, view id, class, bounds and tap centre. Call it before phone_tap so coordinates come from the live screen instead of a guess.',
+      inputSchema: {
+        type: 'object',
+        properties: { ...DEVICE_PROPERTY, max_nodes: { type: 'integer', description: 'Cap on returned nodes (default 400, max 2000).' } },
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const data = await phones.call(args.device, 'a11y.tree', { max_nodes: args.max_nodes })
+        return data?.tree ?? data
+      },
+    },
+    {
+      name: 'phone_screenshot',
+      description: 'Take a screenshot of the phone screen. Returns the image plus its pixel size; use phone_ui_tree when you need tap coordinates.',
+      inputSchema: {
+        type: 'object',
+        properties: { ...DEVICE_PROPERTY, max_bytes: { type: 'integer', description: 'Byte budget for the JPEG (default 600000; the transport caps one message at 1 MiB).' } },
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const data = await phones.call(args.device, 'a11y.screenshot', { max_bytes: args.max_bytes })
+        if (!data?.image) throw new Error('the phone did not return an image')
+        return { image: { data: data.image, mimeType: data.mime ?? 'image/jpeg' }, width: data.width, height: data.height, bytes: data.bytes }
+      },
+    },
+    {
+      name: 'phone_tap',
+      description: 'Tap a point on the phone screen, in screen pixels. Take x and y from phone_ui_tree (each node carries its tap centre).',
+      inputSchema: {
+        type: 'object',
+        properties: { ...DEVICE_PROPERTY, x: { type: 'integer', description: 'Screen x in pixels.' }, y: { type: 'integer', description: 'Screen y in pixels.' } },
+        required: ['x', 'y'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const x = Math.round(Number(args.x))
+        const y = Math.round(Number(args.y))
+        if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error('phone_tap needs numeric x and y')
+        return await phones.call(args.device, 'a11y.tap', { x, y })
+      },
+    },
+    {
+      name: 'phone_swipe',
+      description: 'Swipe on the phone screen from one point to another, in screen pixels. Use it to scroll a list or dismiss a card.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          x1: { type: 'integer', description: 'Start x in pixels.' },
+          y1: { type: 'integer', description: 'Start y in pixels.' },
+          x2: { type: 'integer', description: 'End x in pixels.' },
+          y2: { type: 'integer', description: 'End y in pixels.' },
+          duration_ms: { type: 'integer', description: 'Gesture duration in milliseconds (default 300).' },
+        },
+        required: ['x1', 'y1', 'x2', 'y2'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const points = ['x1', 'y1', 'x2', 'y2'].map((key) => Math.round(Number(args[key])))
+        if (points.some((value) => !Number.isFinite(value))) throw new Error('phone_swipe needs numeric x1, y1, x2 and y2')
+        return await phones.call(args.device, 'a11y.swipe', {
+          x1: points[0],
+          y1: points[1],
+          x2: points[2],
+          y2: points[3],
+          duration_ms: args.duration_ms,
+        })
+      },
+    },
+    {
+      name: 'phone_global',
+      description: 'Press a system control on the phone: back, home, recents, notifications, quick_settings or lock.',
+      inputSchema: {
+        type: 'object',
+        properties: { ...DEVICE_PROPERTY, action: { type: 'string', enum: ['back', 'home', 'recents', 'notifications', 'quick_settings', 'lock'] } },
+        required: ['action'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const allowed = ['back', 'home', 'recents', 'notifications', 'quick_settings', 'lock']
+        const action = String(args.action)
+        if (!allowed.includes(action)) throw new Error(`unknown global action: ${action}`)
+        return await phones.call(args.device, 'a11y.global', { action })
+      },
+    },
+    {
       name: 'phone_call',
       description:
         'Escape hatch: invoke any operation the connected phone declares, by name with a JSON argument object. Prefer the dedicated tools; use this for newly added phone capabilities.',

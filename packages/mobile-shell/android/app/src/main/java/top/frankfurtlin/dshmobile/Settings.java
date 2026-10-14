@@ -10,6 +10,7 @@ public final class Settings {
   private static final String K_ALLOW_INSECURE = "allow_insecure";
   private static final String K_LAST_URL = "last_url";
   private static final String K_DEVICE_ID = "device_id";
+  private static final String K_A11Y = "a11y_enabled";
 
   private final SharedPreferences prefs;
 
@@ -43,6 +44,15 @@ public final class Settings {
 
   public void setLastUrl(String url) {
     prefs.edit().putString(K_LAST_URL, url).apply();
+  }
+
+  /** Local switch: even with the system service on, the agent only automates when this is on. */
+  public boolean a11yEnabled() {
+    return prefs.getBoolean(K_A11Y, false);
+  }
+
+  public void setA11yEnabled(boolean v) {
+    prefs.edit().putBoolean(K_A11Y, v).apply();
   }
 
   /** Stable identity this phone presents to the bridge; generated once. */

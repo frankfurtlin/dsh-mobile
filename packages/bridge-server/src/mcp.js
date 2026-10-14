@@ -38,6 +38,16 @@ export function createMcpHandler({ tools, serverInfo }) {
     if (!tool) return { content: [{ type: 'text', text: `unknown tool ${name}` }], isError: true }
     try {
       const data = await tool.handler(args ?? {})
+      if (data && typeof data === 'object' && data.image && typeof data.image.data === 'string') {
+        const { image, ...rest } = data
+        return {
+          content: [
+            { type: 'text', text: JSON.stringify(rest, null, 2) },
+            { type: 'image', data: image.data, mimeType: image.mimeType ?? 'image/jpeg' },
+          ],
+          isError: false,
+        }
+      }
       const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
       return { content: [{ type: 'text', text }], isError: false }
     } catch (error) {

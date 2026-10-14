@@ -8,7 +8,25 @@
 import WebSocket from 'ws'
 
 /** Operations the fake phone answers, mirroring the v1 app contract. */
-export const FAKE_CAPS = ['ping', 'info', 'shares', 'clipboard.get', 'clipboard.set', 'notify', 'open', 'files.save', 'files.open']
+export const FAKE_CAPS = [
+  'ping',
+  'info',
+  'shares',
+  'clipboard.get',
+  'clipboard.set',
+  'notify',
+  'open',
+  'files.save',
+  'files.open',
+  'apps.list',
+  'apps.launch',
+  'a11y.status',
+  'a11y.tree',
+  'a11y.screenshot',
+  'a11y.tap',
+  'a11y.swipe',
+  'a11y.global',
+]
 
 /**
  * Open a fake phone connection and complete the hello handshake.
@@ -67,6 +85,38 @@ export function connectFakePhone({ url, deviceId = 'fake-phone', name = 'Fake Ph
             },
           })
         case 'files.open':
+          return answer(true, { data: { ok: true } })
+        case 'apps.list':
+          return answer(true, {
+            data: {
+              apps: [
+                { package: 'com.example.chat', label: 'Chat' },
+                { package: 'com.example.notes', label: 'Notes' },
+              ],
+            },
+          })
+        case 'apps.launch':
+          return answer(true, { data: { ok: true, package: msg.args?.package } })
+        case 'a11y.status':
+          return answer(true, { data: { service: true, allowed: true, sdk: 34 } })
+        case 'a11y.tree':
+          return answer(true, {
+            data: {
+              tree: {
+                package: 'com.example.chat',
+                count: 2,
+                nodes: [
+                  { text: 'Chats', class: 'android.widget.TextView', bounds: [0, 0, 1080, 160], center: [540, 80] },
+                  { text: 'Alice', class: 'android.widget.TextView', clickable: true, bounds: [0, 160, 1080, 320], center: [540, 240] },
+                ],
+              },
+            },
+          })
+        case 'a11y.screenshot':
+          return answer(true, { data: { image: 'ZmFrZS1qcGVn', mime: 'image/jpeg', width: 1080, height: 2400, bytes: 9 } })
+        case 'a11y.tap':
+        case 'a11y.swipe':
+        case 'a11y.global':
           return answer(true, { data: { ok: true } })
         default:
           return answer(false, { error: `fake phone has no op ${msg.op}` })

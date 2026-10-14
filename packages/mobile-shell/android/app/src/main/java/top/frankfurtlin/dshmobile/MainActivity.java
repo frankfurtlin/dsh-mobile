@@ -312,6 +312,34 @@ public class MainActivity extends AppCompatActivity {
    * Edge-to-edge with hand-applied insets: the toolbar keeps clear of the status bar / display
    * cutout and the page keeps clear of the gesture bar, instead of hiding content behind them.
    */
+  /** Accessibility automation needs both the system service and this app's own switch. */
+  private void showA11yDialog() {
+    final boolean serviceOn = A11yService.ready();
+    final boolean allowed = settings.a11yEnabled();
+    String status = serviceOn ? getString(R.string.a11y_status_on) : getString(R.string.a11y_status_off);
+    String toggle = allowed ? getString(R.string.a11y_allow_off) : getString(R.string.a11y_allow_on);
+    new AlertDialog.Builder(this)
+      .setTitle(R.string.a11y_dialog_title)
+      .setMessage(status + "\n\n" + getString(R.string.a11y_help))
+      .setItems(new String[] { toggle, getString(R.string.a11y_open_settings) }, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          if (which == 0) {
+            settings.setA11yEnabled(!allowed);
+            Toast.makeText(MainActivity.this, !allowed ? R.string.a11y_allow_on : R.string.a11y_allow_off, Toast.LENGTH_SHORT).show();
+            return;
+          }
+          try {
+            startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
+          } catch (Exception e) {
+            Log.w(TAG, "cannot open accessibility settings", e);
+          }
+        }
+      })
+      .setNegativeButton(R.string.a11y_close, null)
+      .show();
+  }
+
   private void applySystemBars() {
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     final View toolbar = findViewById(R.id.toolbar);
@@ -608,6 +636,10 @@ public class MainActivity extends AppCompatActivity {
     }
     if (id == R.id.action_inbox) {
       showInbox();
+      return true;
+    }
+    if (id == R.id.action_a11y) {
+      showA11yDialog();
       return true;
     }
     if (id == R.id.action_change_server) {
