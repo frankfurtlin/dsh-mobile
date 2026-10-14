@@ -5,6 +5,9 @@
  * Usage: node tools/smoke.mjs
  */
 
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { loadConfig } from '../src/config.js'
 import { listen } from '../src/http.js'
 import { connectFakePhone } from './fake-phone.mjs'
@@ -30,7 +33,12 @@ function check(name, ok, detail = '') {
   console.log(`  FAIL ${name}${detail ? ` — ${detail}` : ''}`)
 }
 
-const config = { ...loadConfig({}), port: 0, allowUnauthenticated: true }
+const artifactDir = await mkdtemp(path.join(tmpdir(), 'dsh-bridge-dl-'))
+const artifactBody = 'hello download\n'
+await writeFile(path.join(artifactDir, 'hello.txt'), artifactBody)
+await mkdir(path.join(artifactDir, 'sub'))
+
+const config = { ...loadConfig({}), port: 0, allowUnauthenticated: true, downloadDir: artifactDir, downloadPath: '/bridge/download' }
 const handle = await listen(config, { log: () => {} })
 const port = handle.server.address().port
 const base = `http://127.0.0.1:${port}`
@@ -214,6 +222,41 @@ const health = await fetch(`${base}/healthz`).then((r) => r.json())
 check('/healthz reports one phone', health.ok === true && health.phones === 1, JSON.stringify(health))
 const missing = await fetch(`${base}/nope`)
 check('unknown route answers 404', missing.status === 404)
+const listing = await fetch(`${base}/nope`).then((r) => r.json())
+check('the 404 listing advertises the download route', listing.routes?.includes('/bridge/download/<file>'), JSON.stringify(listing.routes))
+
+console.log('Download route')
+const dl = await fetch(`${base}${config.downloadPath}/hello.txt`)
+check('download serves a file', dl.status === 200, `status ${dl.status}`)
+check('download uses the text content type', dl.headers.get('content-type') === 'text/plain; charset=utf-8', String(dl.headers.get('content-type')))
+check('download is offered as an attachment', /^attachment; filename="hello\.txt"$/.test(dl.headers.get('content-disposition') ?? ''), String(dl.headers.get('content-disposition')))
+check('download returns the file bytes', (await dl.text()) === artifactBody)
+const head = await fetch(`${base}${config.downloadPath}/hello.txt`, { method: 'HEAD' })
+check('download answers HEAD with the size', head.status === 200 && head.headers.get('content-length') === String(artifactBody.length), `status ${head.status} len ${head.headers.get('content-length')}`)
+const posted = await fetch(`${base}${config.downloadPath}/hello.txt`, { method: 'POST' })
+check('download rejects non-GET methods', posted.status === 405, `status ${posted.status}`)
+const traversal = await fetch(`${base}${config.downloadPath}/..%2f..%2fetc%2fpasswd`)
+check('download rejects a traversal name', traversal.status === 400, `status ${traversal.status}`)
+const dotted = await fetch(`${base}${config.downloadPath}/.hidden`)
+check('download rejects a leading dot name', dotted.status === 400, `status ${dotted.status}`)
+const gone = await fetch(`${base}${config.downloadPath}/nope.txt`)
+check('download reports a missing file', gone.status === 404, `status ${gone.status}`)
+const asDir = await fetch(`${base}${config.downloadPath}/sub`)
+check('download refuses a directory', asDir.status === 404, `status ${asDir.status}`)
+
+const guarded = await listen({ ...config, port: 0, allowUnauthenticated: false }, { log: () => {} })
+const guardedBase = `http://127.0.0.1:${guarded.server.address().port}`
+const anonymous = await fetch(`${guardedBase}${config.downloadPath}/hello.txt`)
+check('download requires the session cookie', anonymous.status === 401, `status ${anonymous.status}`)
+const bogus = await fetch(`${guardedBase}${config.downloadPath}/hello.txt`, { headers: { cookie: 'dsh_gateway_token=not-a-real-token' } })
+check('download rejects an invalid session cookie', bogus.status === 401, `status ${bogus.status}`)
+await guarded.close()
+
+const plain = await listen({ ...loadConfig({}), port: 0, allowUnauthenticated: true }, { log: () => {} })
+const off = await fetch(`http://127.0.0.1:${plain.server.address().port}${config.downloadPath}/hello.txt`)
+check('download route stays off without a configured directory', off.status === 404, `status ${off.status}`)
+await plain.close()
+await rm(artifactDir, { recursive: true, force: true })
 
 phone.close()
 await handle.close()

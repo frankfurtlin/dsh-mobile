@@ -107,6 +107,17 @@ if (!flags.has('--skip-gradle') && existsSync(join(BUILD_TOOLS, 'apksigner'))) {
   if (dn) console.log(`       signer: ${dn.trim()}`)
 }
 
+// The bridge hands the release build to a logged-in phone browser; the copy in
+// dist/ must be exactly the signed artifact, not a stale one.
+const distDir = join(ROOT, 'dist')
+const servedApks = existsSync(distDir) ? readdirSync(distDir).filter((name) => name.endsWith('.apk')) : []
+check('apk', 'a servable APK exists in dist/', servedApks.length > 0, distDir)
+for (const name of servedApks) {
+  const served = join(distDir, name)
+  const same = existsSync(releaseApk) && sha256(served) === sha256(releaseApk)
+  check('apk', `dist/${name} matches the release build`, same, same ? `${statSync(served).size} B` : 'differs from app-release.apk')
+}
+
 // ----- 3. APK manifest ------------------------------------------------------
 
 if (!flags.has('--skip-gradle') && existsSync(join(BUILD_TOOLS, 'aapt2'))) {
@@ -212,6 +223,7 @@ if (!flags.has('--skip-dsh')) {
   check('deploy', 'bridge unit is installed system-wide', existsSync(installedUnit)
     && readFileSync(installedUnit, 'utf8') === readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8'), installedUnit)
   check('deploy', 'Caddy routes /bridge/* to the bridge', existsSync(liveCaddy) && /handle\s+\/bridge\/\*/.test(readFileSync(liveCaddy, 'utf8')), liveCaddy)
+  check('deploy', 'bridge serves artifacts from dist/', readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8').includes('DSH_BRIDGE_DOWNLOAD_DIR=~/workspace/dsh-mobile/dist'))
   check('deploy', 'live profile carries the mcp-phone entry', existsSync(livePatch) && readFileSync(livePatch, 'utf8').includes('mcp-phone'), livePatch)
   if (existsSync(livePatch)) {
     check('deploy', 'live profile keeps an mcp-phone rollback copy', existsSync(`${livePatch}.rollback-no-mcp-phone`))
@@ -242,6 +254,8 @@ for (const doc of [
   'docs/adr/0002-app-shell-native-webview.md',
   'docs/adr/0003-agent-phone-bridge.md',
   'docs/adr/0004-no-root-automation.md',
+  'docs/adr/0005-browsable-folders.md',
+  'docs/adr/0006-artifact-download-route.md',
 ]) {
   check('docs', `${doc} present`, existsSync(join(ROOT, doc)))
 }

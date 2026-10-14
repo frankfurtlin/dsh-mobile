@@ -22,6 +22,16 @@ adb uninstall top.frankfurtlin.dshmobile     # 或 手机设置 → 应用 → D
 
 ## 2. 服务端 bridge 接入
 
+**只关掉构件下载口**（保留手机桥，无需动 Caddy）：删除单元里的两行环境变量并重启 bridge
+
+```bash
+sed -i '/DSH_BRIDGE_DOWNLOAD_/d' /etc/systemd/system/dsh-mobile-bridge.service
+systemctl daemon-reload && systemctl restart dsh-mobile-bridge
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3082/bridge/download/DSH-Mobile-1.0.2.apk   # 期望 404
+```
+
+**整体移除 bridge**：
+
 ```bash
 systemctl disable --now dsh-mobile-bridge
 rm -f /etc/systemd/system/dsh-mobile-bridge.service
@@ -65,5 +75,6 @@ rm -rf ~/.local/android
 - [ ] `systemctl status dsh-mobile-bridge` → not-found / inactive
 - [ ] `https://dsh.example.com/bridge/healthz` 不再返回 bridge 健康体
 - [ ] DSH 会话的 `tools/list` 无 `phone_*`
+- [ ] （若只关下载口）`/bridge/download/<文件>` 返回 404，手机 WSS 仍正常
 - [ ] dsh web + dsh-passwords 网关正常（`curl -s http://127.0.0.1:3081/gateway/healthz`）
 - [ ] 移动端 Web 恢复官方布局（若也移除了 UI 插件）

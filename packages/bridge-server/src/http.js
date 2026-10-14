@@ -12,6 +12,7 @@ import { PhoneRegistry } from './phones.js'
 import { createTools } from './tools.js'
 import { createMcpHandler } from './mcp.js'
 import { createSessionVerifier, tokenFromCookie } from './session.js'
+import { serveDownload } from './download.js'
 
 const require = createRequire(import.meta.url)
 const { version } = require('../package.json')
@@ -43,8 +44,26 @@ export function createServer(config, options = {}) {
       })
       return
     }
+    if (config.downloadDir && (path === config.downloadPath || path.startsWith(`${config.downloadPath}/`))) {
+      serveDownload(req, res, {
+        dir: config.downloadDir,
+        basePath: config.downloadPath,
+        verify: sessions.verify,
+        allowUnauthenticated: config.allowUnauthenticated,
+        log,
+      }).catch((error) => {
+        log(`download failure: ${String(error)}`)
+        if (!res.headersSent) res.writeHead(500).end()
+      })
+      return
+    }
     res.writeHead(404, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ error: 'not found', routes: ['/healthz', config.mcpPath, config.wsPath] }))
+    res.end(
+      JSON.stringify({
+        error: 'not found',
+        routes: ['/healthz', config.mcpPath, config.wsPath, ...(config.downloadDir ? [`${config.downloadPath}/<file>`] : [])],
+      }),
+    )
   })
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: config.maxMessageBytes })

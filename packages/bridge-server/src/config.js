@@ -5,7 +5,7 @@
  * @module dsh-mobile-bridge/config
  */
 
-/** @typedef {{ port: number, host: string, gatewayBase: string, publicOrigin: string, wsPath: string, mcpPath: string, callTimeoutMs: number, heartbeatMs: number, maxMessageBytes: number, sessionCacheMs: number, allowUnauthenticated: boolean }} Config */
+/** @typedef {{ port: number, host: string, gatewayBase: string, publicOrigin: string, wsPath: string, mcpPath: string, callTimeoutMs: number, heartbeatMs: number, maxMessageBytes: number, sessionCacheMs: number, allowUnauthenticated: boolean, downloadDir: string, downloadPath: string }} Config */
 
 /** Values used when the environment leaves a field unset. */
 export const DEFAULTS = Object.freeze({
@@ -20,6 +20,9 @@ export const DEFAULTS = Object.freeze({
   maxMessageBytes: 1024 * 1024,
   sessionCacheMs: 60_000,
   allowUnauthenticated: false,
+  // Empty disables the download route entirely.
+  downloadDir: '',
+  downloadPath: '/bridge/download',
 })
 
 /**
@@ -61,5 +64,19 @@ export function loadConfig(env = process.env) {
     sessionCacheMs: intFrom(env, 'DSH_BRIDGE_SESSION_CACHE_MS', DEFAULTS.sessionCacheMs),
     // Local development only: accepts phone sockets without a gateway session.
     allowUnauthenticated: env.DSH_BRIDGE_ALLOW_NO_AUTH === '1',
+    downloadDir: (env.DSH_BRIDGE_DOWNLOAD_DIR ?? DEFAULTS.downloadDir).replace(/\/+$/, ''),
+    downloadPath: normalizePath(env.DSH_BRIDGE_DOWNLOAD_PATH ?? DEFAULTS.downloadPath),
   }
+}
+
+/**
+ * Normalize a route prefix to a leading-slash, no-trailing-slash form.
+ *
+ * @param {string} value configured path
+ * @returns {string} normalized path
+ */
+function normalizePath(value) {
+  const trimmed = value.trim().replace(/\/+$/, '')
+  if (trimmed === '') return '/'
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
 }

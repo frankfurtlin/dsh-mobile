@@ -14,6 +14,7 @@
 | 线上 profile MCP 接入 | **已生效（无需重启）** | `~/.dsh/profiles/web/cordis.patch.yml` 含 `mcp-phone`（serverName `phone` → `http://127.0.0.1:3082/mcp`）；本会话里 `phone_list`/`phone_ping` 已可用；回滚副本 `cordis.patch.yml.rollback-no-mcp-phone` |
 | 移动端 UI 插件 | **已生效** | `package.json` 的 `dsh.profile.bundles` 含 `dsh-mobile-xc`；23:18 重启成功（见 `docs/verification/last-restart.log`） |
 | 手机 WSS 鉴权门（公网实测） | **4/4 符合预期** | `node tools/probe-ws-auth.mjs` → 无 Origin 403 / 无 cookie 401 / 假 cookie 401 / 错 Origin 403 |
+| 构件下载口 | **已生效** | `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk` → 无 cookie `401`；`dist/` 里的 APK 与 release 构建 sha256 一致 |
 | dsh web 重启 | **已完成（23:18，无需再做）** | `docs/verification/last-restart.log` → `RESULT: SUCCESS`，之后又跑过一次 `MODE=check` 校验 |
 
 ## 0.1 让 Agent 侧 `phone_*` 工具生效（延迟重启）
@@ -53,6 +54,36 @@ cd ~/workspace/dsh-mobile && node tools/check-protocol-parity.mjs   # 9/9
 
 `systemctl restart dsh-mobile-bridge` **不会**影响线上 dsh web / 当前会话（两者是不同 systemd 单元）；
 只有 `deepseek-harness.service` 的重启才会中断本会话。
+
+## 0.1c 把 APK 送到手机（远程场景）
+
+手机不在服务器旁边、只能经 dsh web 访问服务器时，用 bridge 的构件下载口：手机浏览器里先登录
+`https://dsh.example.com`（拿到网关 cookie），再打开
+
+```
+https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk
+```
+
+装新版本时把仓库根的最新签名包复制进 `dist/` 并覆盖下载（`tools/build-apk.sh --release` 之后）：
+
+```bash
+cd ~/workspace/dsh-mobile
+tools/build-apk.sh --release
+cp packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk dist/DSH-Mobile-1.0.2.apk
+sha256sum dist/DSH-Mobile-1.0.2.apk packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk  # 两行必须一致
+```
+
+下载口的两个环境变量在 `deploy/dsh-mobile-bridge.service` 里：
+
+| 变量 | 值 | 作用 |
+|---|---|---|
+| `DSH_BRIDGE_DOWNLOAD_DIR` | `~/workspace/dsh-mobile/dist` | 允许下载的**那一层**目录；留空则整条路由关闭（404） |
+| `DSH_BRIDGE_DOWNLOAD_PATH` | `/bridge/download` | URL 前缀，必须落在 Caddy 已代理的 `/bridge/*` 下 |
+
+行为边界（`packages/bridge-server/tools/smoke.mjs` 14 项断言覆盖）：必须是 `GET`/`HEAD`（否则 405）；
+文件名须匹配 `^[A-Za-z0-9][A-Za-z0-9._-]*$`（`..`、`/`、隐藏文件 → 400）；缺失文件或目录 → 404；
+不带 `dsh_gateway_token` 或 cookie 无效 → 401；响应带 `content-disposition: attachment`、
+`cache-control: no-store`、`x-content-type-options: nosniff`。
 
 ## 0.2 前置检查
 
@@ -140,6 +171,10 @@ dsh --profile mobspike --patch ~/workspace/dsh-mobile/deploy/dsh-profile-mcp-pho
 > `curl -s http://127.0.0.1:3082/healthz` 与 `tools/list` 是否出现 `phone_*` 工具来确认接入成功。
 
 ## 4. 安装手机端 APK
+
+**方式 A（远程，手机只能上网）**：见 §0.1c，手机浏览器打开 `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk`。
+
+**方式 B（手边能连 USB）**：
 
 ```bash
 # 手机：打开 USB 调试并连接后
