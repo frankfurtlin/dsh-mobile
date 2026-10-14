@@ -1,0 +1,27 @@
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+.gradle/
+android/local.properties
+android/app/build/
+android/.gradle/
+android/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+.gradle-cache/
+
+# 采证中间产物
+.spike/
+*.tgz
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# 环境与日志
+*.log
+.env
+.env.*
+!.env.example
