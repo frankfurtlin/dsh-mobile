@@ -156,6 +156,100 @@ export function createTools(phones) {
       },
     },
     {
+      name: 'phone_fs_roots',
+      description:
+        'List the folders on the phone that the agent may browse. Two roots exist: `tree:` is the folder the user opened in DSH Mobile (absent until they pick one) and `downloads:` is always available (Downloads/DSH). Call this before phone_fs_list: every path is root-relative, for example `tree:/Documents/report.pdf` or `downloads:/notes/todo.md`.',
+      inputSchema: {
+        type: 'object',
+        properties: { ...DEVICE_PROPERTY },
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const result = await phones.call(args.device, 'fs.roots', {})
+        return { ok: true, ...result }
+      },
+    },
+    {
+      name: 'phone_fs_list',
+      description:
+        'List one folder on the phone. Each entry has name, path, kind ("file" or "directory"), size and modified time (ms). Use `tree:/` for the folder the user opened (see phone_fs_roots) or `downloads:/` for Downloads/DSH; `..` is rejected, so reads stay inside those two roots.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          path: { type: 'string', description: 'Root-relative path, for example `tree:/` or `downloads:/notes`.' },
+        },
+        required: ['path'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const result = await phones.call(args.device, 'fs.list', { path: args.path })
+        return { ok: true, ...result }
+      },
+    },
+    {
+      name: 'phone_fs_read',
+      description:
+        'Read one file the user has made browsable. UTF-8 text comes back in `text`; binary content comes back in `data` with `encoding: "base64"` (use phone_files_save to copy it elsewhere or phone_files_open to show it to the user). Files larger than 1 MiB are truncated.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          path: { type: 'string', description: 'Root-relative path, for example `tree:/notes/todo.md`.' },
+        },
+        required: ['path'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const result = await phones.call(args.device, 'fs.read', { path: args.path })
+        return { ok: true, ...result }
+      },
+    },
+    {
+      name: 'phone_fs_write',
+      description:
+        'Write a file on the phone inside one of the browsable roots: pass `path` (for example `tree:/notes/todo.md`) and `data`. Missing parent folders are created and an existing file is overwritten. `data` is UTF-8 text unless `encoding` is "base64". Only the user-opened folder and Downloads/DSH can be written, and every write needs the root to exist (check phone_fs_roots first).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          path: { type: 'string', description: 'Root-relative path of the file to write, for example `tree:/notes/todo.md`.' },
+          data: { type: 'string', description: 'File content, UTF-8 text or base64 when encoding is "base64".' },
+          encoding: { type: 'string', enum: ['utf8', 'base64'], description: 'How to decode `data`; defaults to utf8.' },
+          mime: { type: 'string', description: 'MIME type to record with the file; guessed from the name when omitted.' },
+        },
+        required: ['path', 'data'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const result = await phones.call(args.device, 'fs.write', {
+          path: args.path,
+          data: args.data,
+          encoding: args.encoding,
+          mime: args.mime,
+        })
+        return { ok: true, ...result }
+      },
+    },
+    {
+      name: 'phone_fs_mkdir',
+      description:
+        'Create a folder (and any missing parents) inside a browsable root, for example `tree:/notes/2026`. Fails when the path already exists as a file.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          path: { type: 'string', description: 'Root-relative folder path, for example `tree:/notes/2026`.' },
+        },
+        required: ['path'],
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const result = await phones.call(args.device, 'fs.mkdir', { path: args.path })
+        return { ok: true, ...result }
+      },
+    },
+    {
       name: 'phone_open',
       description: 'Open a URL on the phone in its browser or in the app that handles the scheme (http, https, or an app scheme).',
       inputSchema: {

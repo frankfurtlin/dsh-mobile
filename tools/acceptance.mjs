@@ -142,9 +142,10 @@ if (!flags.has('--skip-bridge')) {
   const sdk = run(process.execPath, ['tools/sdk-check.mjs'], { cwd: BRIDGE_DIR })
   const tools = sdk.stdout.match(/^tools: (.+)$/m)?.[1]?.split(', ') ?? []
   check('bridge', 'DSH MCP SDK client connects', sdk.status === 0 && sdk.stdout.includes('sdk-check: ok'), sdk.stderr.trim().slice(0, 200))
-  check('bridge', 'registers 19 phone tools', tools.length === 19, `count=${tools.length}`)
+  check('bridge', 'registers 24 phone tools', tools.length === 24, `count=${tools.length}`)
   check('bridge', 'exposes the automation tools', ['phone_ui_tree', 'phone_screenshot', 'phone_tap', 'phone_swipe', 'phone_global', 'phone_apps', 'phone_launch', 'phone_a11y_status'].every((t) => tools.includes(t)), tools.join(','))
   check('bridge', 'exposes the phone file tools', ['phone_files_save', 'phone_files_open'].every((t) => tools.includes(t)), tools.join(','))
+  check('bridge', 'exposes the browsable-folder tools', ['phone_fs_roots', 'phone_fs_list', 'phone_fs_read', 'phone_fs_write', 'phone_fs_mkdir'].every((t) => tools.includes(t)), tools.join(','))
 
   const parity = run(process.execPath, ['tools/check-protocol-parity.mjs'], { cwd: ROOT })
   const paritySummary = parity.stdout.match(/(\d+)\/(\d+) parity checks passed/)
@@ -182,7 +183,7 @@ if (!flags.has('--skip-gradle') && existsSync(join(JAVA_HOME, 'bin/java'))) {
     }
   }
   check('unit', 'gradle unit test task succeeds', gradle.status === 0, gradle.stdout.split('\n').filter(Boolean).slice(-2).join(' | ').slice(0, 200))
-  check('unit', 'endpoint unit tests all pass', tests >= 10 && failures === 0 && errors === 0, `tests=${tests} failures=${failures} errors=${errors}`)
+  check('unit', 'unit tests all pass', tests >= 16 && failures === 0 && errors === 0, `tests=${tests} failures=${failures} errors=${errors}`)
   console.log(`       unit: ${tests} tests, ${failures} failures, ${errors} errors`)
 }
 

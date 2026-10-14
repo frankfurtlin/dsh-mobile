@@ -20,6 +20,10 @@
         android:title="@string/action_a11y"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_pick_folder"
+        android:title="@string/action_pick_folder"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_change_server"
         android:title="@string/action_change_server"
         app:showAsAction="never" />

@@ -102,6 +102,11 @@ for (const expected of [
   'phone_open',
   'phone_files_save',
   'phone_files_open',
+  'phone_fs_roots',
+  'phone_fs_list',
+  'phone_fs_read',
+  'phone_fs_write',
+  'phone_fs_mkdir',
   'phone_a11y_status',
   'phone_apps',
   'phone_launch',
@@ -143,6 +148,30 @@ const openedByName = await callTool('phone_files_open', { name: 'report.pdf' })
 check('phone_files_open resolves a file by name', String(openedByName.parsed?.uri ?? '').includes('report.pdf'), openedByName.text)
 const noFileTarget = await callTool('phone_files_open', {})
 check('phone_files_open rejects a missing target', noFileTarget.isError, noFileTarget.text)
+
+console.log('Browsable folders')
+const roots = await callTool('phone_fs_roots', {})
+check('phone_fs_roots lists the two roots', roots.parsed?.roots?.length === 2, roots.text)
+check('phone_fs_roots reports the folder the user opened', roots.parsed?.roots?.[0]?.path === 'tree:/', roots.text)
+const treeList = await callTool('phone_fs_list', { path: 'tree:/' })
+check('phone_fs_list lists a directory', treeList.parsed?.entries?.[0]?.name === 'notes' && treeList.parsed?.entries?.[0]?.kind === 'directory', treeList.text)
+const notesList = await callTool('phone_fs_list', { path: 'tree:/notes' })
+check('phone_fs_list lists files inside a folder', notesList.parsed?.entries?.some((e) => e.path === 'tree:/notes/todo.md'), notesList.text)
+const readTodo = await callTool('phone_fs_read', { path: 'tree:/notes/todo.md' })
+check('phone_fs_read returns utf8 text', readTodo.parsed?.encoding === 'utf8' && readTodo.parsed?.text === 'buy milk\n', readTodo.text)
+check('phone received the fs.read call', phone.calls.some((c) => c.op === 'fs.read' && c.args?.path === 'tree:/notes/todo.md'), JSON.stringify(phone.calls.map((c) => c.op)))
+const wrote = await callTool('phone_fs_write', { path: 'tree:/notes/plan.md', data: '# plan\n', mime: 'text/markdown' })
+check('phone_fs_write reports what it created', wrote.parsed?.created === true && wrote.parsed?.size === 7, wrote.text)
+const readBack = await callTool('phone_fs_read', { path: 'tree:/notes/plan.md' })
+check('phone_fs_write round-trips through phone_fs_read', readBack.parsed?.text === '# plan\n', readBack.text)
+const madeDir = await callTool('phone_fs_mkdir', { path: 'tree:/notes/2026' })
+check('phone_fs_mkdir creates a folder', madeDir.parsed?.ok === true, madeDir.text)
+const missingRoot = await callTool('phone_fs_list', { path: 'nowhere:/' })
+check('phone_fs_list rejects an unknown root', missingRoot.isError, missingRoot.text)
+const missingFile = await callTool('phone_fs_read', { path: 'tree:/nope.txt' })
+check('phone_fs_read rejects a missing file', missingFile.isError && /no such file/.test(missingFile.text), missingFile.text)
+const noPath = await callTool('phone_fs_list', {})
+check('phone_fs_list requires a path', noPath.isError, noPath.text)
 
 console.log('Apps and automation')
 const apps = await callTool('phone_apps', {})

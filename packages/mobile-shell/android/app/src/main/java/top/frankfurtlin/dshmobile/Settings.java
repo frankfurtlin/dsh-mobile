@@ -11,6 +11,7 @@ public final class Settings {
   private static final String K_LAST_URL = "last_url";
   private static final String K_DEVICE_ID = "device_id";
   private static final String K_A11Y = "a11y_enabled";
+  private static final String K_FILES_ROOT = "files_root";
 
   private final SharedPreferences prefs;
 
@@ -63,6 +64,26 @@ public final class Settings {
       prefs.edit().putString(K_DEVICE_ID, id).apply();
     }
     return id;
+  }
+
+  /**
+   * Folder the user handed to the agent through the system folder picker.
+   *
+   * @return the persisted tree URI, or {@code null} when the user has not picked one yet
+   */
+  public String getFilesRoot() {
+    return prefs.getString(K_FILES_ROOT, null);
+  }
+
+  /**
+   * @param uri tree URI granted with a persistable permission, or {@code null} to forget it
+   */
+  public void setFilesRoot(String uri) {
+    if (uri == null) {
+      prefs.edit().remove(K_FILES_ROOT).apply();
+    } else {
+      prefs.edit().putString(K_FILES_ROOT, uri).apply();
+    }
   }
 
   public void clear() {

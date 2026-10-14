@@ -65,4 +65,12 @@
     <string name="a11y_help">在系统设置里找到「已下载的应用 → DSH Mobile → DSH 自动操作」并开启。部分机型（Android 13+ 侧载安装）需要先点右上角「允许受限设置」。</string>
     <string name="a11y_allow_on">已允许 Agent 使用无障碍</string>
     <string name="a11y_allow_off">已禁止 Agent 使用无障碍</string>
+    <string name="action_pick_folder">选择可浏览的文件夹</string>
+    <string name="folder_none">还没有把任何文件夹交给 DSH。选择后，Agent 可以列目录、读文件、写新文件（例如整个「文档」或某个工作目录）。Downloads/DSH 始终可读写，不需要这一步。</string>
+    <string name="folder_current">当前交给 DSH 的文件夹：%1$s\n可以重新选择，或清除授权。</string>
+    <string name="folder_pick">选择文件夹</string>
+    <string name="folder_clear">清除授权</string>
+    <string name="folder_cleared">已清除文件夹授权</string>
+    <string name="folder_picked">已授权 DSH 浏览：%1$s</string>
+    <string name="folder_pick_failed">无法保存该文件夹的授权，换一个文件夹或换一个位置再试</string>
 </resources>

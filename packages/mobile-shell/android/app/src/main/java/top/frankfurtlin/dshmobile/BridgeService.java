@@ -211,7 +211,7 @@ public class BridgeService extends Service {
   // ----- operations --------------------------------------------------------
 
   /** Operations this phone answers today; sent in `hello`. */
-  private static final String[] CAPS = { "ping", "info", "shares", "clipboard.get", "clipboard.set", "notify", "open", "files.save", "files.open", "apps.list", "apps.launch", "a11y.status", "a11y.tree", "a11y.screenshot", "a11y.tap", "a11y.swipe", "a11y.global" };
+  private static final String[] CAPS = { "ping", "info", "shares", "clipboard.get", "clipboard.set", "notify", "open", "files.save", "files.open", "fs.roots", "fs.list", "fs.read", "fs.write", "fs.mkdir", "apps.list", "apps.launch", "a11y.status", "a11y.tree", "a11y.screenshot", "a11y.tap", "a11y.swipe", "a11y.global" };
 
   /** Public folder the agent writes into (must match {@link Files}). */
   private static final String FOLDER = "DSH";
@@ -412,6 +412,28 @@ public class BridgeService extends Service {
           reply(webSocket, id, true, data, null);
           return;
         }
+        case "fs.roots": {
+          reply(webSocket, id, true, fileRoots(), null);
+          return;
+        }
+        case "fs.list": {
+          reply(webSocket, id, true, fileBrowser().list(opt(args, "path"), opt(args, "uri")), null);
+          return;
+        }
+        case "fs.read": {
+          reply(webSocket, id, true, fileBrowser().read(opt(args, "path"), opt(args, "uri")), null);
+          return;
+        }
+        case "fs.write": {
+          JSONObject data = fileBrowser().write(opt(args, "path"), opt(args, "uri"), opt(args, "name"),
+              opt(args, "mime"), args == null ? null : args.optString("data", null), opt(args, "encoding"));
+          reply(webSocket, id, true, data, null);
+          return;
+        }
+        case "fs.mkdir": {
+          reply(webSocket, id, true, fileBrowser().mkdir(opt(args, "path"), opt(args, "uri"), opt(args, "name")), null);
+          return;
+        }
         case "apps.list": {
           JSONObject data = new JSONObject();
           data.put("apps", launcherApps());
@@ -513,6 +535,27 @@ public class BridgeService extends Service {
   }
 
   // ----- apps and accessibility --------------------------------------------
+
+  /** Bridge operations over the folders the user has opened to the agent. */
+  private FileBrowser fileBrowser() {
+    return new FileBrowser(this);
+  }
+
+  private JSONObject fileRoots() throws Exception {
+    JSONObject data = new JSONObject();
+    data.put("roots", fileBrowser().roots());
+    String shared = new Settings(this).getFilesRoot();
+    data.put("shared", shared == null ? JSONObject.NULL : shared);
+    return data;
+  }
+
+  /** Trim an optional string argument; blank and an explicit JSON null both mean "absent". */
+  private static String opt(JSONObject args, String key) {
+    if (args == null) return null;
+    String value = args.optString(key, null);
+    if (value == null || value.isEmpty() || value.equals("null")) return null;
+    return value;
+  }
 
   /** Launcher apps only: package visibility is scoped by the manifest `<queries>` block. */
   private JSONArray launcherApps() {
@@ -618,10 +661,7 @@ public class BridgeService extends Service {
   }
 
   private static String guessMime(String name) {
-    int dot = name.lastIndexOf('.');
-    String ext = dot > 0 ? name.substring(dot + 1).toLowerCase() : "";
-    String mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-    return mime == null ? "application/octet-stream" : mime;
+    return Files.guessMime(name);
   }
 
   private String readClipboard() {

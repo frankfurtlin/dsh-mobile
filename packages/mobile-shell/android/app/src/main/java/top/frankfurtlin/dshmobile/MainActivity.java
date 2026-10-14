@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
   private static final int REQ_FILE_CHOOSER = 1001;
   private static final int REQ_CAMERA = 1002;
   private static final int REQ_NOTIFICATIONS = 1003;
+  private static final int REQ_PICK_TREE = 1004;
 
   private WebView web;
   private ProgressBar progress;
@@ -312,6 +313,76 @@ public class MainActivity extends AppCompatActivity {
    * Edge-to-edge with hand-applied insets: the toolbar keeps clear of the status bar / display
    * cutout and the page keeps clear of the gesture bar, instead of hiding content behind them.
    */
+  /** Offer the agent a folder: pick one, see the current one, or forget it. */
+  private void showFilesDialog() {
+    final String current = settings.getFilesRoot();
+    AlertDialog.Builder builder = new AlertDialog.Builder(this)
+      .setTitle(R.string.action_pick_folder)
+      .setMessage(current == null
+        ? getString(R.string.folder_none)
+        : getString(R.string.folder_current, folderLabel(current)))
+      .setPositiveButton(R.string.folder_pick, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          launchFolderPicker();
+        }
+      })
+      .setNegativeButton(R.string.a11y_close, null);
+    if (current != null) {
+      builder.setNeutralButton(R.string.folder_clear, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          settings.setFilesRoot(null);
+          Toast.makeText(MainActivity.this, R.string.folder_cleared, Toast.LENGTH_SHORT).show();
+        }
+      });
+    }
+    builder.show();
+  }
+
+  private void launchFolderPicker() {
+    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+      | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+      | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+      | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+    try {
+      startActivityForResult(intent, REQ_PICK_TREE);
+    } catch (Exception e) {
+      Log.w(TAG, "no folder picker on this device", e);
+      Toast.makeText(this, R.string.folder_pick_failed, Toast.LENGTH_LONG).show();
+    }
+  }
+
+  /** The system picker always returns a tree URI; keep the grant across restarts. */
+  private void onFolderPicked(int resultCode, Intent data) {
+    if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) return;
+    Uri tree = data.getData();
+    int granted = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+    if (granted == 0) granted = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+    try {
+      getContentResolver().takePersistableUriPermission(tree, granted);
+      settings.setFilesRoot(tree.toString());
+      Toast.makeText(this, getString(R.string.folder_picked, folderLabel(tree.toString())), Toast.LENGTH_LONG).show();
+    } catch (Exception e) {
+      Log.w(TAG, "cannot keep the folder grant", e);
+      Toast.makeText(this, R.string.folder_pick_failed, Toast.LENGTH_LONG).show();
+    }
+  }
+
+  private static String folderLabel(String treeUri) {
+    try {
+      String id = android.provider.DocumentsContract.getTreeDocumentId(Uri.parse(treeUri));
+      int colon = id.indexOf(':');
+      String tail = colon >= 0 ? id.substring(colon + 1) : id;
+      int slash = tail.lastIndexOf('/');
+      String name = slash >= 0 ? tail.substring(slash + 1) : tail;
+      return name.isEmpty() ? tail : name;
+    } catch (Exception e) {
+      return treeUri;
+    }
+  }
+
   /** Accessibility automation needs both the system service and this app's own switch. */
   private void showA11yDialog() {
     final boolean serviceOn = A11yService.ready();
@@ -642,6 +713,10 @@ public class MainActivity extends AppCompatActivity {
       showA11yDialog();
       return true;
     }
+    if (id == R.id.action_pick_folder) {
+      showFilesDialog();
+      return true;
+    }
     if (id == R.id.action_change_server) {
       startActivity(new Intent(this, SetupActivity.class));
       return true;
@@ -679,6 +754,10 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == REQ_PICK_TREE) {
+      onFolderPicked(resultCode, data);
+      return;
+    }
     if (requestCode == REQ_CAMERA && filePathCallback != null) {
       Uri[] res = (resultCode == Activity.RESULT_OK && cameraUri != null) ? new Uri[]{cameraUri} : null;
       filePathCallback.onReceiveValue(res);
@@ -799,6 +878,30 @@ public class MainActivity extends AppCompatActivity {
     @JavascriptInterface
     public String shares() {
       return Inbox.toJson(MainActivity.this);
+    }
+
+    /** Folder the agent may browse, or null when the user has not picked one. */
+    @JavascriptInterface
+    public String filesRoot() {
+      return MainActivity.this.settings.getFilesRoot();
+    }
+
+    /** Show the system folder picker so the web page can offer a button. */
+    @JavascriptInterface
+    public void pickFilesRoot() {
+      runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          launchFolderPicker();
+        }
+      });
+    }
+
+    /** Human readable name of the shared folder, or an empty string. */
+    @JavascriptInterface
+    public String filesRootLabel() {
+      String root = MainActivity.this.settings.getFilesRoot();
+      return root == null ? "" : folderLabel(root);
     }
   }
 }

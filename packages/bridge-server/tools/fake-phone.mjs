@@ -18,6 +18,11 @@ export const FAKE_CAPS = [
   'open',
   'files.save',
   'files.open',
+  'fs.roots',
+  'fs.list',
+  'fs.read',
+  'fs.write',
+  'fs.mkdir',
   'apps.list',
   'apps.launch',
   'a11y.status',
@@ -40,6 +45,37 @@ export function connectFakePhone({ url, deviceId = 'fake-phone', name = 'Fake Ph
     /** @type {Array<object>} */
     const calls = []
     const phone = { ws, id: deviceId, calls, close: () => ws.close() }
+    /** Root-relative path -> { data, encoding, mime, at }; mirrors the app's two roots. */
+    const files = new Map([
+      ['tree:/notes/todo.md', { data: 'buy milk\n', encoding: 'utf8', mime: 'text/markdown', at: Date.now() }],
+      ['downloads:/hello.txt', { data: 'hello from the fake phone\n', encoding: 'utf8', mime: 'text/plain', at: Date.now() }],
+    ])
+    const entryOf = (path, meta) => ({
+      name: path.slice(path.lastIndexOf('/') + 1),
+      path,
+      kind: 'file',
+      size: meta.data.length,
+      mtime: meta.at,
+    })
+    const listRoot = (root) => {
+      const prefix = `${root}/`
+      const dirs = new Set()
+      const rows = []
+      for (const [path, meta] of files) {
+        if (!path.startsWith(prefix)) continue
+        const rest = path.slice(prefix.length)
+        const slash = rest.indexOf('/')
+        if (slash < 0) {
+          rows.push(entryOf(path, meta))
+          continue
+        }
+        const dir = rest.slice(0, slash)
+        if (dirs.has(dir)) continue
+        dirs.add(dir)
+        rows.push({ name: dir, path: `${prefix}${dir}`, kind: 'directory', size: 0, mtime: Date.now() })
+      }
+      return rows
+    }
     ws.on('error', reject)
     ws.on('open', () => {
       ws.send(JSON.stringify({ t: 'hello', device: { id: deviceId, name, model }, caps: FAKE_CAPS }))
@@ -92,6 +128,58 @@ export function connectFakePhone({ url, deviceId = 'fake-phone', name = 'Fake Ph
               mime: msg.args?.mime ?? 'application/octet-stream',
             },
           })
+        case 'fs.roots':
+          return answer(true, {
+            data: {
+              roots: [
+                { kind: 'tree', path: 'tree:/', label: 'Fake Folder', writable: true },
+                { kind: 'downloads', path: 'downloads:/', label: 'Downloads/DSH', writable: true },
+              ],
+              shared: 'content://com.android.externalstorage.documents/tree/primary%3AFake',
+            },
+          })
+        case 'fs.list': {
+          const path = String(msg.args?.path ?? '')
+          const root = path.replace(/\/+$/, '')
+          if (!root.startsWith('tree:') && !root.startsWith('downloads:')) {
+            return answer(false, { error: `not a browsable root: ${path}` })
+          }
+          const slash = root.indexOf('/')
+          const base = slash < 0 ? `${root}/` : root
+          return answer(true, { data: { path: base, entries: listRoot(base.replace(/\/$/, '')) } })
+        }
+        case 'fs.read': {
+          const path = String(msg.args?.path ?? '')
+          const meta = files.get(path)
+          if (!meta) return answer(false, { error: `no such file: ${path}` })
+          const payload = { path, name: path.slice(path.lastIndexOf('/') + 1), size: meta.data.length, mime: meta.mime }
+          if (meta.encoding === 'base64') return answer(true, { data: { ...payload, encoding: 'base64', data: meta.data } })
+          return answer(true, { data: { ...payload, encoding: 'utf8', text: meta.data } })
+        }
+        case 'fs.write': {
+          const path = String(msg.args?.path ?? '')
+          const data = String(msg.args?.data ?? '')
+          const created = !files.has(path)
+          files.set(path, {
+            data,
+            encoding: msg.args?.encoding === 'base64' ? 'base64' : 'utf8',
+            mime: msg.args?.mime ?? 'application/octet-stream',
+            at: Date.now(),
+          })
+          return answer(true, {
+            data: { path, name: path.slice(path.lastIndexOf('/') + 1), size: data.length, created },
+          })
+        }
+        case 'fs.mkdir': {
+          const path = String(msg.args?.path ?? '')
+          const prefixed = `${path}/`
+          for (const existing of files.keys()) {
+            if (existing === path) return answer(false, { error: `already a file: ${path}` })
+          }
+          const created = ![...files.keys()].some((k) => k.startsWith(prefixed))
+          files.set(`${path}/.keep`, { data: '', encoding: 'utf8', mime: 'text/plain', at: Date.now() })
+          return answer(true, { data: { path, ok: true, created } })
+        }
         case 'apps.list':
           return answer(true, {
             data: {

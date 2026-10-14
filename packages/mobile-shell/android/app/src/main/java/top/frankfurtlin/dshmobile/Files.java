@@ -20,9 +20,23 @@ import java.io.OutputStream;
  */
 public final class Files {
   private static final String TAG = "DshFiles";
-  private static final String FOLDER = "DSH";
+  /** Drop folder name used across both file doors. */
+  public static final String FOLDER = "DSH";
 
   private Files() {}
+
+  /**
+   * Guess a mime type from a file name.
+   *
+   * @param name file name, extension optional
+   * @return a mime type, {@code application/octet-stream} when the extension is unknown
+   */
+  public static String guessMime(String name) {
+    int dot = name == null ? -1 : name.lastIndexOf('.');
+    String ext = dot > 0 ? name.substring(dot + 1).toLowerCase() : "";
+    String mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+    return mime == null ? "application/octet-stream" : mime;
+  }
 
   /** Where a saved file landed: the content URI is what the phone and other apps open. */
   public static final class Saved {
