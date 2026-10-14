@@ -72,7 +72,7 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P1 移动端 UI 选型 + 线上安装 | **完成**：选定 `dsh-mobile-xc`（回退 `@qingshanyuluo/dsh-client-ui-mobile`）；已装进 `web` profile，**重启 dsh web 后生效** |
 | P2 App 骨架 + endpoint 登录 | **代码完成，待真机验证**：调试 APK 已产出 |
 | P3 原生能力 | **代码完成，待真机验证** |
-| P4 Agent ↔ 手机桥 | **服务端完成，App 侧待实现**：`packages/bridge-server` 提供 MCP（`/mcp`，仅 loopback）与手机 WSS（`/bridge/ws`），网关 cookie 鉴权已实测；工具 `phone_list/ping/info/shares/clipboard_*/notify/open/call`。App 侧 WSS 客户端待写 |
+| P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，33/33 自测）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/call` |
 | P5 无 root 无障碍自动操作 | 未开始 |
 | P6 验证/签名/交付 | 未开始 |
 
@@ -100,7 +100,8 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/debug/app-deb
 | 分享进 DSH | 系统分享面板里出现「分享到 DSH」，文本/图片/多文件进收件箱（菜单里可打开、复制、清空） |
 | 剪贴板 | `DshMobile.copyText/getClipboard` |
 | 屏幕常亮 | 菜单开关 + `DshMobile.setKeepAwake(bool)`，长回答流式期间不被息屏打断 |
-| JS bridge | `DshMobile.getEndpoint/getAppVersion/openExternal/copyText/getClipboard/setKeepAwake/keepAwake/shares` |
+| 手机桥 | App 前台服务保持一条已认证 WSS `/bridge/ws`；Agent 侧经 MCP 工具 `phone_*` 访问手机（剪贴板读写、通知、打开链接、保存文件到 Downloads/DSH、通用直通 `phone_call`）；`DshMobile.bridgeStatus()` 可查连接状态 |
+| JS bridge | `DshMobile.getEndpoint/getAppVersion/openExternal/copyText/getClipboard/setKeepAwake/keepAwake/shares/saveBase64/bridgeStatus` |
 
 ## 安全
 

@@ -9,6 +9,7 @@ public final class Settings {
   private static final String K_ENDPOINT = "endpoint";
   private static final String K_ALLOW_INSECURE = "allow_insecure";
   private static final String K_LAST_URL = "last_url";
+  private static final String K_DEVICE_ID = "device_id";
 
   private final SharedPreferences prefs;
 
@@ -42,6 +43,16 @@ public final class Settings {
 
   public void setLastUrl(String url) {
     prefs.edit().putString(K_LAST_URL, url).apply();
+  }
+
+  /** Stable identity this phone presents to the bridge; generated once. */
+  public String getDeviceId() {
+    String id = prefs.getString(K_DEVICE_ID, null);
+    if (id == null) {
+      id = java.util.UUID.randomUUID().toString();
+      prefs.edit().putString(K_DEVICE_ID, id).apply();
+    }
+    return id;
   }
 
   public void clear() {

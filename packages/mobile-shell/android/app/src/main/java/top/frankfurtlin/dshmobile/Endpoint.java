@@ -52,6 +52,11 @@ public final class Endpoint {
     return base + "/gateway/logout";
   }
 
+  /** Phone WebSocket endpoint published by Caddy in front of the bridge. */
+  public String bridgeUrl() {
+    return base.replaceFirst("^http", "ws") + "/bridge/ws";
+  }
+
   /** True when the URL belongs to this server (keep it inside the app WebView). */
   public boolean owns(String url) {
     if (url == null) return false;

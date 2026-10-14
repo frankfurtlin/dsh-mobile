@@ -48,8 +48,15 @@ P4 要让 Agent（运行在 dsh web 宿主进程里）能读写手机上的文�
 - 心跳：服务端每 25s 发 WebSocket ping；两次无 pong 视为掉线。
 - 上限：单条消息 1 MiB，单次调用默认 30s 超时。
 
-v1 op：`ping` / `info` / `shares` / `clipboard.get` / `clipboard.set` / `notify` / `open`。
+v1 op：`ping` / `info` / `shares` / `clipboard.get` / `clipboard.set` / `notify` / `open` / `files.save` / `files.open`。
 工具 `phone_call` 是通用直通口，新增 op 不必改 bridge。
+
+## App 侧实现（P4.2）
+
+- `BridgeService`（前台服务，`foregroundServiceType=connectedDevice`）持有一条 OkHttp WebSocket：握手带 `Cookie: dsh_gateway_token=<token>`（来自 `CredentialStore`）与 `Origin: <endpoint base>`；连上后发 `hello`，收 `welcome`；掉线按 2/4/8/15/30/60s 退避重连；`MainActivity` 在登录后启动、登出与 401 时停止，token 变化时重启。
+- 通知：常驻「DSH 手机桥」状态通知（渠道 `dsh_bridge_status`，低优先级）+ Agent 触发的提醒（渠道 `dsh_agent_messages`）。`DshMobile.bridgeStatus()` 让 Web 端读到状态字符串。
+- `files.save`：三种取数方式任选其一——`data`（base64 或 `data:` URL）、`url`（带网关 cookie 下载，32 MiB 上限）、`path`（本机可读路径）；落盘走 `Files.save` 的 MediaStore（API 29+，`Downloads/DSH`、`Pictures/DSH`、`Movies/DSH`、`Music/DSH`、`Documents/DSH`，写入期间 `IS_PENDING`），低于 Q 回退到应用外部目录；**不弹系统对话框**，因此 Agent 可在无人值守时写入。`files.open` 交给 `ACTION_VIEW`（带读授权 flag）。
+- 工具名：MCP 侧 `phone_files_save`（`data`/`url`/`path` 三选一，`dest` 决定落盘集合），`phone_call` 可直通 `files.open` 等新 op。
 
 ## 已知限制
 

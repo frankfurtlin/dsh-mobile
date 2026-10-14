@@ -90,7 +90,7 @@ console.log('Tool discovery')
 const listed = await rpc('tools/list', {})
 const names = (listed.body?.result?.tools ?? []).map((t) => t.name)
 check('tools/list answers 200', listed.status === 200)
-for (const expected of ['phone_list', 'phone_info', 'phone_ping', 'phone_shares', 'phone_clipboard_get', 'phone_clipboard_set', 'phone_notify', 'phone_open', 'phone_call']) {
+for (const expected of ['phone_list', 'phone_info', 'phone_ping', 'phone_shares', 'phone_clipboard_get', 'phone_clipboard_set', 'phone_notify', 'phone_open', 'phone_files_save', 'phone_call']) {
   check(`tools/list includes ${expected}`, names.includes(expected), names.join(','))
 }
 check('every tool declares an input schema', (listed.body?.result?.tools ?? []).every((t) => t.inputSchema?.type === 'object'))
@@ -110,6 +110,11 @@ check('phone_open succeeds', opened.parsed?.ok === true, opened.text)
 check('phone received the open call', phone.calls.some((c) => c.op === 'open' && c.args?.url === 'https://example.com'), JSON.stringify(phone.calls.map((c) => c.op)))
 const passthrough = await callTool('phone_call', { op: 'info', args: {} })
 check('phone_call passthrough returns device info', passthrough.parsed?.data?.model === 'Pixel (fake)', passthrough.text)
+const saved = await callTool('phone_files_save', { name: 'report.pdf', mime: 'application/pdf', data: 'aGVsbG8=' })
+check('phone_files_save returns a content uri', String(saved.parsed?.uri ?? '').startsWith('content://'), saved.text)
+check('phone received the files.save call', phone.calls.some((c) => c.op === 'files.save' && c.args?.name === 'report.pdf'), JSON.stringify(phone.calls.map((c) => c.op)))
+const noSource = await callTool('phone_files_save', { name: 'x.txt' })
+check('phone_files_save rejects a missing source', noSource.isError, noSource.text)
 
 console.log('Failure paths')
 const ghost = await callTool('phone_list', { device: 'ghost' })

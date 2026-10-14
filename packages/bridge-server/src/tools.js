@@ -100,6 +100,35 @@ export function createTools(phones) {
       },
     },
     {
+      name: 'phone_files_save',
+      description:
+        'Save a file onto the phone so the user can open it: into Downloads/DSH (default), Pictures/DSH, Movies/DSH, Music/DSH or Documents/DSH. Provide exactly one source: base64 `data`, a URL the phone downloads, or a `path` on the phone. Returns the content URI, which phone_open can open.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          name: { type: 'string', description: 'File name with extension, for example report.pdf.' },
+          mime: { type: 'string', description: 'MIME type; guessed from the name when omitted.' },
+          dest: { type: 'string', enum: ['downloads', 'pictures', 'movies', 'audio', 'documents'], description: 'Public collection to save into.' },
+          data: { type: 'string', description: 'Base64 file content (data: URLs accepted).' },
+          url: { type: 'string', description: 'URL the phone downloads, using its own DSH session.' },
+          path: { type: 'string', description: 'Absolute path on the phone.' },
+        },
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const sources = ['data', 'url', 'path'].filter((key) => typeof args[key] === 'string' && args[key].length > 0)
+        if (sources.length !== 1) throw new Error('provide exactly one of data, url or path')
+        const result = await phones.call(args.device, 'files.save', {
+          name: args.name,
+          mime: args.mime,
+          dest: args.dest,
+          [sources[0]]: args[sources[0]],
+        })
+        return { ok: true, ...result }
+      },
+    },
+    {
       name: 'phone_open',
       description: 'Open a URL on the phone in its browser or in the app that handles the scheme (http, https, or an app scheme).',
       inputSchema: {

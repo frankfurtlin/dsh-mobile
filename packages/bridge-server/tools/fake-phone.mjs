@@ -8,7 +8,7 @@
 import WebSocket from 'ws'
 
 /** Operations the fake phone answers, mirroring the v1 app contract. */
-export const FAKE_CAPS = ['ping', 'info', 'shares', 'clipboard.get', 'clipboard.set', 'notify', 'open']
+export const FAKE_CAPS = ['ping', 'info', 'shares', 'clipboard.get', 'clipboard.set', 'notify', 'open', 'files.save', 'files.open']
 
 /**
  * Open a fake phone connection and complete the hello handshake.
@@ -56,6 +56,17 @@ export function connectFakePhone({ url, deviceId = 'fake-phone', name = 'Fake Ph
           return answer(true, { data: { ok: true, bytes: String(msg.args?.text ?? '').length } })
         case 'notify':
         case 'open':
+          return answer(true, { data: { ok: true } })
+        case 'files.save':
+          return answer(true, {
+            data: {
+              uri: `content://media/external/downloads/${msg.args?.name ?? 'file'}`,
+              name: msg.args?.name ?? 'file',
+              dest: msg.args?.dest ?? 'downloads',
+              size: String(msg.args?.data ?? '').length,
+            },
+          })
+        case 'files.open':
           return answer(true, { data: { ok: true } })
         default:
           return answer(false, { error: `fake phone has no op ${msg.op}` })

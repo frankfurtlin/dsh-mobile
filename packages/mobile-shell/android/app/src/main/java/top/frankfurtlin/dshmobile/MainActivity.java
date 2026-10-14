@@ -87,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
   private ValueCallback<Uri[]> filePathCallback;
   private Uri cameraUri;
   private boolean keepAwake;
+  private boolean bridgeRunning;
+  private boolean tokenChanged;
   private String pendingLoginNext = "/";
   private long backPressedAt = 0L;
 
@@ -146,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
     String start = settings.getLastUrl();
     if (start == null || !endpoint.owns(start)) start = endpoint.base + "/";
     web.loadUrl(start);
+    startBridge(false);
   }
 
   // ----- WebView setup -----------------------------------------------------
@@ -186,6 +189,10 @@ public class MainActivity extends AppCompatActivity {
         progress.setVisibility(View.GONE);
         settings.setLastUrl(url);
         captureToken(url);
+        if (tokenChanged) {
+          tokenChanged = false;
+          startBridge(true);
+        }
       }
 
       @Override
@@ -394,6 +401,31 @@ public class MainActivity extends AppCompatActivity {
 
   // ----- credential handling ----------------------------------------------
 
+  /** Starts (or restarts after a token change) the bridge connection the agent uses to reach this phone. */
+  private void startBridge(boolean restart) {
+    if (endpoint == null) return;
+    String token = creds.load(endpoint.host);
+    if (token == null || token.isEmpty()) return; // not logged in yet
+    if (bridgeRunning && !restart) return;
+    Intent intent = new Intent(this, BridgeService.class);
+    intent.setAction(BridgeService.ACTION_START);
+    try {
+      androidx.core.content.ContextCompat.startForegroundService(this, intent);
+      bridgeRunning = true;
+    } catch (Exception e) {
+      Log.w(TAG, "bridge start failed", e);
+    }
+  }
+
+  private void stopBridge() {
+    bridgeRunning = false;
+    try {
+      startService(new Intent(this, BridgeService.class).setAction(BridgeService.ACTION_STOP));
+    } catch (Exception e) {
+      Log.w(TAG, "bridge stop failed", e);
+    }
+  }
+
   private void seedCookie(String token) {
     CookieManager cm = CookieManager.getInstance();
     cm.setCookie(endpoint.base, COOKIE_NAME + "=" + token + "; Path=/");
@@ -433,6 +465,7 @@ public class MainActivity extends AppCompatActivity {
       if (!token.equals(known)) {
         Log.i(TAG, "captured gateway token for " + endpoint.host);
         creds.save(endpoint.host, token);
+        tokenChanged = true;
       }
     }
   }
@@ -443,6 +476,7 @@ public class MainActivity extends AppCompatActivity {
     cm.setCookie(endpoint.base, COOKIE_NAME + "=; Path=/; Max-Age=0");
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) cm.flush();
     settings.setLastUrl(null);
+    stopBridge();
     showWeb();
     web.loadUrl(endpoint.loginUrl(pendingLoginNext));
   }
@@ -583,6 +617,7 @@ public class MainActivity extends AppCompatActivity {
     if (id == R.id.action_logout) {
       creds.clear();
       settings.setLastUrl(null);
+      stopBridge();
       requestServerLogout();
       CookieManager cm = CookieManager.getInstance();
       cm.setCookie(endpoint.base, COOKIE_NAME + "=; Path=/; Max-Age=0");
@@ -700,6 +735,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** Keep the screen on during long streaming answers; the bridge thread must hop to the UI one. */
+    /** Saves base64 content into the phone's public Downloads/DSH folder. Returns JSON with uri/size. */
+    @JavascriptInterface
+    public String saveBase64(final String name, final String mime, final String base64) {
+      try {
+        byte[] bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+        Files.Saved saved = Files.save(MainActivity.this, name, mime, "downloads", bytes);
+        return saved.toJson().toString();
+      } catch (Exception e) {
+        Log.w(TAG, "saveBase64 failed", e);
+        return "{\"error\":\"" + e.getMessage() + "\"}";
+      }
+    }
+
     @JavascriptInterface
     public void setKeepAwake(final boolean on) {
       runOnUiThread(new Runnable() {
