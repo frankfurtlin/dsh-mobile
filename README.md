@@ -71,7 +71,7 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P0 工具链 + Android 工程 | **完成**：JDK 21 + Android SDK 35 在 `~/.local/android`，`assembleDebug` 可构建 |
 | P1 移动端 UI 选型 + 线上安装 | **完成**：选定 `dsh-mobile-xc`（回退 `@qingshanyuluo/dsh-client-ui-mobile`）；已装进 `web` profile，**重启 dsh web 后生效** |
 | P2 App 骨架 + endpoint 登录 | **代码完成，待真机验证**：调试 APK 已产出 |
-| P3 原生能力 | 未开始 |
+| P3 原生能力 | **代码完成，待真机验证** |
 | P4 Agent ↔ 手机桥 | 未开始 |
 | P5 无 root 无障碍自动操作 | 未开始 |
 | P6 验证/签名/交付 | 未开始 |
@@ -88,6 +88,19 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/debug/app-deb
 
 首次启动只填 endpoint（如 `https://dsh.example.com`），App 会 `GET /gateway/healthz`
 探活并打开网关登录页；登录后凭证加密落盘，杀进程重开免登录（服务端 cookie 12h 有效期）。
+
+### 已实现的原生能力
+
+| 能力 | 说明 |
+|---|---|
+| 安全区 | edge-to-edge + 手写 inset：顶栏避让状态栏/刘海，页面避让手势条 |
+| 附件/拍照 | `<input type=file>` 走 SAF；带 `capture` 的走系统相机并回填 URI（FileProvider） |
+| 下载 | `DownloadManager` → `Downloads/DSH/`，带 cookie，完成后有通知（已申请通知权限） |
+| 外部 App 打开 | 非本服务器的链接交给系统；收件箱文件用 `ACTION_VIEW` 打开 |
+| 分享进 DSH | 系统分享面板里出现「分享到 DSH」，文本/图片/多文件进收件箱（菜单里可打开、复制、清空） |
+| 剪贴板 | `DshMobile.copyText/getClipboard` |
+| 屏幕常亮 | 菜单开关 + `DshMobile.setKeepAwake(bool)`，长回答流式期间不被息屏打断 |
+| JS bridge | `DshMobile.getEndpoint/getAppVersion/openExternal/copyText/getClipboard/setKeepAwake/keepAwake/shares` |
 
 ## 安全
 

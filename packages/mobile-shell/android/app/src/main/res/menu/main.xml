@@ -6,6 +6,16 @@
         android:title="@string/action_refresh"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_inbox"
+        android:title="@string/action_inbox"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_keep_awake"
+        android:checkable="true"
+        android:title="@string/action_keep_awake"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_change_server"
         android:title="@string/action_change_server"
         app:showAsAction="never" />

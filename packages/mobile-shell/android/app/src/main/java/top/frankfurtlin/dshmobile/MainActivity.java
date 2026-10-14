@@ -1,21 +1,27 @@
 package top.frankfurtlin.dshmobile;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
@@ -34,11 +40,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
+import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
   private static final String TAG = "MainActivity";
   public static final String COOKIE_NAME = "dsh_gateway_token";
   private static final int REQ_FILE_CHOOSER = 1001;
+  private static final int REQ_CAMERA = 1002;
+  private static final int REQ_NOTIFICATIONS = 1003;
 
   private WebView web;
   private ProgressBar progress;
@@ -70,6 +85,8 @@ public class MainActivity extends AppCompatActivity {
   private final ExecutorService io = Executors.newSingleThreadExecutor();
 
   private ValueCallback<Uri[]> filePathCallback;
+  private Uri cameraUri;
+  private boolean keepAwake;
   private String pendingLoginNext = "/";
   private long backPressedAt = 0L;
 
@@ -93,6 +110,9 @@ public class MainActivity extends AppCompatActivity {
       getSupportActionBar().setTitle("DSH");
       getSupportActionBar().setSubtitle(endpoint.host);
     }
+
+    applySystemBars();
+    requestNotificationPermissionIfNeeded();
 
     progress = findViewById(R.id.progress);
     errorView = findViewById(R.id.error_view);
@@ -207,6 +227,19 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
         filePathCallback = cb;
+        if (wantsCamera(params)) {
+          try {
+            cameraUri = createCaptureUri();
+            Intent take = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            take.putExtra(MediaStore.EXTRA_OUTPUT, cameraUri);
+            take.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(take, REQ_CAMERA);
+            return true;
+          } catch (Exception e) {
+            Log.w(TAG, "camera capture unavailable, falling back to the file picker", e);
+            cameraUri = null;
+          }
+        }
         try {
           Intent intent = params.createIntent();
           intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
@@ -245,6 +278,118 @@ public class MainActivity extends AppCompatActivity {
         }
       }
     });
+  }
+
+  // ----- phone capabilities ------------------------------------------------
+
+  /** True when the page asked for a camera capture (e.g. <input type="file" capture accept="image/*">). */
+  private static boolean wantsCamera(WebChromeClient.FileChooserParams params) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return false;
+    if (!params.isCaptureEnabled()) return false;
+    String[] accept = params.getAcceptTypes();
+    if (accept == null || accept.length == 0) return false;
+    for (String t : accept) {
+      if (t != null && (t.startsWith("image/") || t.equals("*/*"))) return true;
+    }
+    return false;
+  }
+
+  private Uri createCaptureUri() throws Exception {
+    File dir = new File(getCacheDir(), "images");
+    if (!dir.exists() && !dir.mkdirs()) throw new java.io.IOException("no image dir");
+    File f = new File(dir, "capture_" + System.currentTimeMillis() + ".jpg");
+    return FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", f);
+  }
+
+  /**
+   * Edge-to-edge with hand-applied insets: the toolbar keeps clear of the status bar / display
+   * cutout and the page keeps clear of the gesture bar, instead of hiding content behind them.
+   */
+  private void applySystemBars() {
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    final View toolbar = findViewById(R.id.toolbar);
+    final View container = findViewById(R.id.web_container);
+    ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content),
+        new androidx.core.view.OnApplyWindowInsetsListener() {
+          @Override
+          public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
+            Insets bar = insets.getInsets(WindowInsetsCompat.Type.systemBars()
+                | WindowInsetsCompat.Type.displayCutout());
+            toolbar.setPadding(toolbar.getPaddingLeft(), bar.top, toolbar.getPaddingRight(),
+                toolbar.getPaddingBottom());
+            container.setPadding(0, 0, 0, bar.bottom);
+            return insets;
+          }
+        });
+  }
+
+  private void requestNotificationPermissionIfNeeded() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+      return;
+    }
+    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATIONS);
+  }
+
+  /** Long streaming answers are easy to lose to screen timeout; the user opts in explicitly. */
+  private void setKeepAwake(boolean on) {
+    keepAwake = on;
+    if (on) {
+      getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+      Toast.makeText(this, R.string.keep_awake_on, Toast.LENGTH_SHORT).show();
+    } else {
+      getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+      Toast.makeText(this, R.string.keep_awake_off, Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void showInbox() {
+    final List<Inbox.Item> items = Inbox.list(this);
+    if (items.isEmpty()) {
+      Toast.makeText(this, R.string.inbox_empty, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    String[] labels = new String[items.size()];
+    for (int i = 0; i < items.size(); i++) {
+      Inbox.Item it = items.get(i);
+      labels[i] = it.name + (it.mime == null || it.mime.isEmpty() ? "" : " — " + it.mime);
+    }
+    new AlertDialog.Builder(this)
+        .setTitle(R.string.inbox_title)
+        .setItems(labels, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            openInboxItem(items.get(which));
+          }
+        })
+        .setNegativeButton(R.string.inbox_clear, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            Inbox.clear(MainActivity.this);
+            invalidateOptionsMenu();
+          }
+        })
+        .show();
+  }
+
+  private void openInboxItem(Inbox.Item item) {
+    if (item.text != null) {
+      ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+      if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("dsh", item.text));
+      Toast.makeText(this, R.string.inbox_copied, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    if (item.path == null) return;
+    File f = new File(item.path);
+    Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", f);
+    Intent i = new Intent(Intent.ACTION_VIEW);
+    i.setDataAndType(uri, item.mime == null || item.mime.isEmpty() ? "*/*" : item.mime);
+    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    try {
+      startActivity(i);
+    } catch (ActivityNotFoundException e) {
+      Toast.makeText(this, R.string.error_open_file, Toast.LENGTH_SHORT).show();
+    }
   }
 
   // ----- credential handling ----------------------------------------------
@@ -402,11 +547,33 @@ public class MainActivity extends AppCompatActivity {
   }
 
   @Override
+  public boolean onPrepareOptionsMenu(Menu menu) {
+    MenuItem inbox = menu.findItem(R.id.action_inbox);
+    if (inbox != null) {
+      int n = Inbox.list(this).size();
+      inbox.setVisible(n > 0);
+      inbox.setTitle(getString(R.string.action_inbox, String.valueOf(n)));
+    }
+    MenuItem awake = menu.findItem(R.id.action_keep_awake);
+    if (awake != null) awake.setChecked(keepAwake);
+    return super.onPrepareOptionsMenu(menu);
+  }
+
+  @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     int id = item.getItemId();
     if (id == R.id.action_refresh) {
       showWeb();
       web.reload();
+      return true;
+    }
+    if (id == R.id.action_keep_awake) {
+      setKeepAwake(!keepAwake);
+      item.setChecked(keepAwake);
+      return true;
+    }
+    if (id == R.id.action_inbox) {
+      showInbox();
       return true;
     }
     if (id == R.id.action_change_server) {
@@ -445,6 +612,13 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == REQ_CAMERA && filePathCallback != null) {
+      Uri[] res = (resultCode == Activity.RESULT_OK && cameraUri != null) ? new Uri[]{cameraUri} : null;
+      filePathCallback.onReceiveValue(res);
+      filePathCallback = null;
+      cameraUri = null;
+      return;
+    }
     if (requestCode != REQ_FILE_CHOOSER || filePathCallback == null) return;
     Uri[] results = null;
     if (resultCode == Activity.RESULT_OK && data != null) {
@@ -474,6 +648,8 @@ public class MainActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
     if (web != null) web.onResume();
+    // A share from another app lands in the inbox while we were backgrounded.
+    invalidateOptionsMenu();
   }
 
   @Override
@@ -510,6 +686,39 @@ public class MainActivity extends AppCompatActivity {
     public void copyText(String text) {
       ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
       if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("dsh", text));
+    }
+
+    /** Read the system clipboard, so a paste button in the page can offer it. */
+    @JavascriptInterface
+    public String getClipboard() {
+      ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+      if (cm == null || cm.getPrimaryClip() == null) return "";
+      ClipData data = cm.getPrimaryClip();
+      if (data.getItemCount() == 0) return "";
+      CharSequence text = data.getItemAt(0).getText();
+      return text == null ? "" : text.toString();
+    }
+
+    /** Keep the screen on during long streaming answers; the bridge thread must hop to the UI one. */
+    @JavascriptInterface
+    public void setKeepAwake(final boolean on) {
+      runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          MainActivity.this.setKeepAwake(on);
+        }
+      });
+    }
+
+    @JavascriptInterface
+    public boolean keepAwake() {
+      return MainActivity.this.keepAwake;
+    }
+
+    /** JSON array of items shared into the app from other apps. */
+    @JavascriptInterface
+    public String shares() {
+      return Inbox.toJson(MainActivity.this);
     }
   }
 }
