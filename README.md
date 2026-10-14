@@ -72,7 +72,7 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P1 移动端 UI 选型 + 线上安装 | **完成**：选定 `dsh-mobile-xc`（回退 `@qingshanyuluo/dsh-client-ui-mobile`）；已装进 `web` profile，**重启 dsh web 后生效** |
 | P2 App 骨架 + endpoint 登录 | **代码完成，待真机验证**：调试 APK 已产出 |
 | P3 原生能力 | **代码完成，待真机验证** |
-| P4 Agent ↔ 手机桥 | 未开始 |
+| P4 Agent ↔ 手机桥 | **服务端完成，App 侧待实现**：`packages/bridge-server` 提供 MCP（`/mcp`，仅 loopback）与手机 WSS（`/bridge/ws`），网关 cookie 鉴权已实测；工具 `phone_list/ping/info/shares/clipboard_*/notify/open/call`。App 侧 WSS 客户端待写 |
 | P5 无 root 无障碍自动操作 | 未开始 |
 | P6 验证/签名/交付 | 未开始 |
 

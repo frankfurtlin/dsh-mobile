@@ -1,0 +1,24 @@
+{
+  "name": "dsh-mobile-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP-facing bridge between the DSH agent and DSH Mobile phones (WebSocket + Streamable HTTP MCP).",
+  "bin": {
+    "dsh-mobile-bridge": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "smoke": "node tools/smoke.mjs",
+    "fake-phone": "node tools/fake-phone.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0"
+  }
+}

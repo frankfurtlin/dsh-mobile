@@ -1,0 +1,21 @@
+[Unit]
+Description=DSH Mobile bridge (MCP endpoint + phone WebSocket)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=~/workspace/dsh-mobile/packages/bridge-server
+Environment=DSH_BRIDGE_PUBLIC_ORIGIN=https://dsh.example.com
+Environment=DSH_BRIDGE_GATEWAY=http://127.0.0.1:3081
+ExecStart=~/.nvm/versions/node/v24.21.0/bin/node src/index.js
+Restart=always
+RestartSec=2
+
+# The bridge is loopback-only; it never needs to reach beyond this host.
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

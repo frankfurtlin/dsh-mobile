@@ -54,7 +54,7 @@
 | **P1 移动端 UI 选型** | 影子 profile 实测 3 个候选；选主力、记缺口；再装进 `web` profile | 手机端内容列占满、桌面零变化（截图/指标对比） | 1d | ✅ 选型完成（ADR-0001）；`dsh-mobile-xc` 已装进线上 `web` profile，**重启 dsh web 后生效** |
 | **P2 App 骨架 + endpoint 登录** | endpoint 归一化与探活、WebView 登录、cookie 捕获/加密持久化/回填、401 自动回登录、登出、局域网 HTTP/自签证书 | 冷启动重开免登录；错 endpoint 有明确报错；过期自动回登录 | 1.5–2d | ✅ 代码完成 + 调试 APK 已产出（4.4MB）；**待真机验证** |
 | **P3 原生能力** | 安全区、返回键、键盘 resize、下载拦截、外部 App 打开、附件选择/拍照上传、系统分享进 DSH、剪贴板、流式期间常亮、长任务通知 | 每项真机可走通；附件在会话正常预览 | 2–3d | ✅ 代码完成（edge-to-edge inset / 拍照回填 / `ACTION_SEND` 收件箱 / 剪贴板双向 / 常亮开关 / 通知权限），**待真机验证** |
-| **P4 Agent ↔ 手机桥** | App WSS 客户端（复用网关 cookie）+ `phone.list_dir / read_file / write_file / list_apps / launch_app / clipboard_*`；SAF/MediaStore 授权、路径白名单、危险操作确认、审计、重连超时 | 对话中让 Agent 读出手机文件内容；越权路径被拒 | 3–5d | 未开始 |
+| **P4 Agent ↔ 手机桥** | 服务端 bridge（MCP over Streamable HTTP + 手机 WSS，网关 cookie 核验）+ App 侧 WSS 客户端与前台服务；工具 `phone_list/ping/info/shares/clipboard_*/notify/open/call`；后续 `phone.list_dir / read_file / write_file / list_apps / launch_app`；SAF/MediaStore 授权、路径白名单、危险操作确认、重连与超时 | 对话中让 Agent 读到手机上的内容；未认证连接被拒 | 3–5d | 🟡 服务端完成（ADR-0003；29/29 自测 + DSH 同款 MCP SDK 客户端连通 + 三条鉴权路径实测）；**待 App 侧 WSS 客户端与真机联调** |
 | **P5 无 root 无障碍自动操作** | `AccessibilityService`：截图（MediaProjection/无障碍）、点击、滑动、返回、启动应用；敏感操作 App 内二次确认与审计；系统设置引导页 | 在手机上通过对话完成"打开某 App 并点击某按钮"；未授权时优雅降级 | 2–3d | 未开始 |
 | **P6 验证与交付** | 自动化验收脚本 + 真机清单、release 签名（keystore 存 `~/.secrets`）、PWA/iOS 说明、一键构建与回滚文档 | 全部验收项通过，第三方可照文档装起来 | 1d | 未开始 |
 
