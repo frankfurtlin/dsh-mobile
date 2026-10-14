@@ -1,0 +1,214 @@
+#!/usr/bin/env node
+/**
+ * End-to-end acceptance harness for dsh-mobile.
+ *
+ * Runs every check that can be done without a phone: toolchain, APK artifacts and
+ * their manifest, the bridge server's own end-to-end suite, the DSH-side wiring,
+ * and the delivery documents. Device-side items live in
+ * docs/verification/device-checklist.md.
+ *
+ * Usage:
+ *   node tools/acceptance.mjs
+ *   node tools/acceptance.mjs --skip-gradle          # no Android SDK needed
+ *   node tools/acceptance.mjs --json out.json --quiet
+ *
+ * Exit code 1 when any check fails.
+ */
+
+import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const ANDROID_DIR = join(ROOT, 'packages/mobile-shell/android')
+const BRIDGE_DIR = join(ROOT, 'packages/bridge-server')
+const ANDROID_HOME = process.env.ANDROID_HOME ?? '~/.local/android'
+const BUILD_TOOLS = process.env.DSH_BUILD_TOOLS ?? join(ANDROID_HOME, 'build-tools/35.0.0')
+const JAVA_HOME = process.env.JAVA_HOME ?? '~/.local/android/jdk-21.0.12.1+1'
+const DSH_BIN = process.env.DSH_BIN ?? 'dsh'
+
+const argv = process.argv.slice(2)
+const flags = new Set(argv.filter((a) => a.startsWith('--')))
+const jsonFlag = argv.find((a) => a.startsWith('--json'))
+const jsonPath = jsonFlag ? (jsonFlag.includes('=') ? jsonFlag.split('=')[1] : argv[argv.indexOf(jsonFlag) + 1]) : null
+const quiet = flags.has('--quiet')
+
+const checks = []
+/**
+ * Record one check.
+ *
+ * @param {string} section grouping label
+ * @param {string} name assertion label
+ * @param {boolean} ok whether it passed
+ * @param {string} [detail] extra context
+ * @returns {void}
+ */
+function check(section, name, ok, detail = '') {
+  checks.push({ section, name, ok: Boolean(ok), detail })
+  if (!quiet || !ok) console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}${detail && !ok ? ` — ${detail}` : ''}`)
+}
+
+/**
+ * Run a command, never throwing.
+ *
+ * @param {string} command binary
+ * @param {string[]} args arguments
+ * @param {Record<string, unknown>} [options] spawn options
+ * @returns {{ status: number, stdout: string, stderr: string }} result
+ */
+function run(command, args, options = {}) {
+  const res = spawnSync(command, args, {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${JAVA_HOME}/bin:${process.env.PATH ?? ''}` },
+    ...options,
+  })
+  return { status: res.status ?? -1, stdout: res.stdout ?? '', stderr: res.stderr ?? '' }
+}
+
+/**
+ * sha256 of a file.
+ *
+ * @param {string} file path
+ * @returns {string} hex digest
+ */
+function sha256(file) {
+  return createHash('sha256').update(readFileSync(file)).digest('hex')
+}
+
+// ----- 1. toolchain ---------------------------------------------------------
+
+if (!flags.has('--skip-gradle')) {
+  console.log('Toolchain')
+  check('toolchain', 'JAVA_HOME resolves', existsSync(join(JAVA_HOME, 'bin/java')), JAVA_HOME)
+  const java = run(join(JAVA_HOME, 'bin/java'), ['-version'])
+  check('toolchain', 'java runs', java.status === 0, (java.stderr || java.stdout).split('\n')[0])
+  const aapt2 = join(BUILD_TOOLS, 'aapt2')
+  check('toolchain', 'aapt2 present', existsSync(aapt2), aapt2)
+  check('toolchain', 'apksigner present', existsSync(join(BUILD_TOOLS, 'apksigner')), BUILD_TOOLS)
+}
+
+// ----- 2. APK artifacts -----------------------------------------------------
+
+console.log('APK artifacts')
+const debugApk = join(ANDROID_DIR, 'app/build/outputs/apk/debug/app-debug.apk')
+const releaseApk = join(ANDROID_DIR, 'app/build/outputs/apk/release/app-release.apk')
+for (const [label, apk] of [['debug', debugApk], ['release', releaseApk]]) {
+  const ok = existsSync(apk) && statSync(apk).size > 1024 * 1024
+  check('apk', `${label} APK exists and is plausible`, ok, existsSync(apk) ? `${statSync(apk).size} B` : 'missing')
+  if (ok) console.log(`       ${label}: ${(statSync(apk).size / 1024 / 1024).toFixed(2)} MiB sha256=${sha256(apk).slice(0, 16)}…`)
+}
+
+if (!flags.has('--skip-gradle') && existsSync(join(BUILD_TOOLS, 'apksigner'))) {
+  const verify = run(join(BUILD_TOOLS, 'apksigner'), ['verify', '--print-certs', releaseApk])
+  check('apk', 'release APK signature verifies', verify.status === 0 && verify.stdout.includes('Signer #1'), verify.stdout.split('\n')[0] ?? verify.stderr.trim())
+  const dn = verify.stdout.match(/certificate DN: (.+)/)?.[1]
+  if (dn) console.log(`       signer: ${dn.trim()}`)
+}
+
+// ----- 3. APK manifest ------------------------------------------------------
+
+if (!flags.has('--skip-gradle') && existsSync(join(BUILD_TOOLS, 'aapt2'))) {
+  console.log('APK manifest')
+  const dump = run(join(BUILD_TOOLS, 'aapt2'), ['dump', 'xmltree', '--file', 'AndroidManifest.xml', releaseApk])
+  const manifest = dump.stdout
+  check('manifest', 'manifest dump succeeds', dump.status === 0 && manifest.length > 500, dump.stderr.trim().slice(0, 160))
+  for (const component of ['MainActivity', 'SetupActivity', 'ShareTargetActivity', 'A11yService', 'BridgeService']) {
+    check('manifest', `declares ${component}`, manifest.includes(`top.frankfurtlin.dshmobile.${component}`))
+  }
+  check('manifest', 'A11yService is bound by the system permission', manifest.includes('BIND_ACCESSIBILITY_SERVICE'))
+  check('manifest', 'BridgeService declares a foreground service type', /foregroundServiceType\(0x01010599\)=0x0*10/.test(manifest))
+  check('manifest', 'package visibility <queries> block present', manifest.includes('E: queries'))
+  const sendFilters = (manifest.match(/android\.intent\.action\.SEND/g) ?? []).length
+  check('manifest', 'share targets accept ACTION_SEND', sendFilters >= 3, `occurrences=${sendFilters}`)
+
+  const badging = run(join(BUILD_TOOLS, 'aapt2'), ['dump', 'badging', releaseApk])
+  check('manifest', 'applicationId is top.frankfurtlin.dshmobile', /package: name='top\.frankfurtlin\.dshmobile'/.test(badging.stdout), badging.stdout.split('\n')[0])
+  check('manifest', 'app label is DSH Mobile', /application-label:'DSH Mobile'/.test(badging.stdout))
+  check('manifest', 'requests FOREGROUND_SERVICE', badging.stdout.includes('android.permission.FOREGROUND_SERVICE'))
+  check('manifest', 'requests POST_NOTIFICATIONS', badging.stdout.includes('android.permission.POST_NOTIFICATIONS'))
+}
+
+// ----- 4. bridge server -----------------------------------------------------
+
+if (!flags.has('--skip-bridge')) {
+  console.log('Bridge server')
+  const smoke = run(process.execPath, ['tools/smoke.mjs'], { cwd: BRIDGE_DIR })
+  const summary = smoke.stdout.match(/(\d+)\/(\d+) checks passed/)
+  check('bridge', 'smoke suite passes completely', smoke.status === 0 && summary && summary[1] === summary[2], summary ? summary[0] : smoke.stderr.trim().slice(0, 200))
+  if (summary) console.log(`       smoke: ${summary[0]}`)
+
+  const sdk = run(process.execPath, ['tools/sdk-check.mjs'], { cwd: BRIDGE_DIR })
+  const tools = sdk.stdout.match(/^tools: (.+)$/m)?.[1]?.split(', ') ?? []
+  check('bridge', 'DSH MCP SDK client connects', sdk.status === 0 && sdk.stdout.includes('sdk-check: ok'), sdk.stderr.trim().slice(0, 200))
+  check('bridge', 'registers 18 phone tools', tools.length === 18, `count=${tools.length}`)
+  check('bridge', 'exposes the automation tools', ['phone_ui_tree', 'phone_screenshot', 'phone_tap', 'phone_swipe', 'phone_global', 'phone_apps', 'phone_launch', 'phone_a11y_status'].every((t) => tools.includes(t)), tools.join(','))
+}
+
+// ----- 5. DSH-side wiring ---------------------------------------------------
+
+console.log('DSH wiring')
+const profilePkg = '~/.dsh/profiles/web/package.json'
+check('dsh', 'web profile exists', existsSync(profilePkg))
+if (existsSync(profilePkg)) {
+  const pkg = JSON.parse(readFileSync(profilePkg, 'utf8'))
+  const bundles = pkg.dsh?.profile?.bundles ?? []
+  check('dsh', 'web profile depends on dsh-mobile-xc', Object.keys(pkg.dependencies ?? {}).includes('dsh-mobile-xc'), JSON.stringify(pkg.dependencies ?? {}))
+  check('dsh', 'web profile bundles enable dsh-mobile-xc', bundles.includes('dsh-mobile-xc'), bundles.join(','))
+}
+
+for (const artifact of ['dsh-mobile-bridge.service', 'caddy-dsh-mobile.snippet', 'dsh-profile-mcp-phone.yml']) {
+  check('deploy', `deploy/${artifact} present`, existsSync(join(ROOT, 'deploy', artifact)))
+}
+
+if (!flags.has('--skip-dsh')) {
+  const patchFile = join(ROOT, 'deploy/dsh-profile-mcp-phone.yml')
+  if (existsSync(patchFile)) {
+    const dump = run(DSH_BIN, ['--profile', process.env.DSH_SPIKE_PROFILE ?? 'mobspike', '--patch', patchFile, '--dump-config'])
+    const ok = dump.status === 0 && /mcp-phone|phone/.test(dump.stdout)
+    check('dsh', 'MCP patch parses under a shadow profile', ok, (dump.stderr || dump.stdout).trim().split('\n').slice(0, 2).join(' | ').slice(0, 200))
+  }
+}
+
+// ----- 6. docs --------------------------------------------------------------
+
+console.log('Docs')
+for (const doc of [
+  'README.md',
+  'docs/PLAN.md',
+  'docs/DEPLOY.md',
+  'docs/ROLLBACK.md',
+  'docs/DELIVERY.md',
+  'docs/verification/device-checklist.md',
+  'docs/adr/0001-mobile-ui-plugin-selection.md',
+  'docs/adr/0002-app-shell-native-webview.md',
+  'docs/adr/0003-agent-phone-bridge.md',
+  'docs/adr/0004-no-root-automation.md',
+]) {
+  check('docs', `${doc} present`, existsSync(join(ROOT, doc)))
+}
+
+// ----- summary --------------------------------------------------------------
+
+const failed = checks.filter((c) => !c.ok)
+const passed = checks.length - failed.length
+const report = {
+  generatedAt: new Date().toISOString(),
+  host: process.env.HOSTNAME ?? '',
+  root: ROOT,
+  skipped: [...flags].filter((f) => f.startsWith('--skip')),
+  summary: { passed, total: checks.length, failed: failed.length },
+  checks,
+}
+const out = jsonPath ?? join(ROOT, `docs/verification/acceptance-${new Date().toISOString().replace(/[:.]/g, '-')}.json`)
+mkdirSync(dirname(out), { recursive: true })
+writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`)
+
+console.log(`\n${passed}/${checks.length} acceptance checks passed`)
+console.log(`report: ${out}`)
+if (failed.length > 0) {
+  console.log('\nfailures:')
+  for (const item of failed) console.log(`  - [${item.section}] ${item.name}${item.detail ? ` — ${item.detail}` : ''}`)
+}
+process.exit(failed.length === 0 ? 0 : 1)

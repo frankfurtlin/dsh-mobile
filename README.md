@@ -6,7 +6,7 @@
   登录凭证加密保存在手机本地 → 重开免登录 → 直接使用官方 Web UI 的全部功能。
 - 顺带治好"手机浏览器用 DSH 难受"：侧栏变抽屉、内容列占满宽度、安全区/键盘适配，**桌面端零影响**。
 - 额外提供 Web 端没有的手机能力：浏览/上传手机文件、用手机 App 打开文件、系统分享进 DSH，
-  以及让 Agent 通过工具读写手机文件；后续再加无 root 无障碍自动操作。
+  以及让 Agent 通过工具读写手机文件；并支持**无 root 的无障碍自动操作**（截图、控件树、点击/滑动、启动应用）。
 
 ## 目录结构
 
@@ -14,17 +14,22 @@
 dsh-mobile/
 ├─ docs/
 │  ├─ PLAN.md                     # 开发计划与当前进度
-│  ├─ adr/0001-...md              # 移动端 UI 选型决策（含实测数据）
-│  └─ verification/               # 无头 Chromium 采证：截图 + 布局诊断 JSON
+│  ├─ DEPLOY.md                   # 服务端 + 手机端部署手册
+│  ├─ ROLLBACK.md                 # 回滚手册（手机端 / bridge / UI 插件）
+│  ├─ DELIVERY.md                 # 交付物清单、构建与签名、iOS/PWA 说明
+│  ├─ adr/0001-...0004-...md      # 决策记录：UI 选型 / 原生壳 / 手机桥 / 无障碍
+│  └─ verification/               # 布局截图与诊断 JSON、验收报告、真机清单
 ├─ packages/
 │  ├─ mobile-shell/               # Capacitor Android App（包名 top.frankfurtlin.dshmobile）
-│  ├─ mobile-ui-plugin/           # 自研 DSH 客户端插件（补生态插件缺口，哈希无关锚点）
-│  └─ phone-bridge-plugin/        # DSH 宿主插件：phone.* 工具 + 外连 WSS RPC
+│  └─ bridge-server/              # Agent ↔ 手机桥（MCP + 手机 WSS，18 个 phone_* 工具）
+├─ deploy/                        # systemd 单元、Caddy 片段、DSH profile 的 MCP patch
 ├─ tools/
 │  ├─ install-toolchain.sh        # JDK 21 + Android cmdline-tools（装 ~/.local，不碰系统）
-│  ├─ shoot.mjs                   # 无头截图 + 移动端布局诊断
-│  └─ build-apk.sh                # 一键构建（后续）
-└─ tests/
+│  ├─ build-apk.sh                # 一键构建（debug / --release 签名包）
+│  ├─ gen-keystore.sh             # 生成发布签名材料（存 ~/.secrets，不入库）
+│  ├─ acceptance.mjs              # 自动化验收（42 项）
+│  ├─ check-anchors.mjs           # 移动插件 CSS 哈希漂移检测
+│  └─ shoot.mjs                   # 无头截图 + 移动端布局诊断
 ```
 
 ## 环境
@@ -42,12 +47,23 @@ source ~/.local/android/env.sh       # JAVA_HOME / ANDROID_HOME / PATH
 
 ```bash
 source ~/.local/android/env.sh
-cd packages/mobile-shell
-npm install
-npx cap sync android
-cd android && ./gradlew assembleDebug
-# 产物：android/app/build/outputs/apk/debug/app-debug.apk
+tools/build-apk.sh                       # 调试包（增量构建秒级）
+tools/gen-keystore.sh                    # 一次性：生成发布签名材料
+tools/build-apk.sh --release             # 发布包（已签名，约 3.5 MB）
 ```
+
+产物在 `packages/mobile-shell/android/app/build/outputs/apk/{debug,release}/`；脚本会打印大小与 sha256。
+签名细节与校验命令见 [docs/DELIVERY.md](docs/DELIVERY.md)。
+
+## 自动化验收
+
+```bash
+node tools/acceptance.mjs                # 42 项：工具链 / APK 与清单 / bridge 自测 / DSH 接线 / 文档
+node tools/acceptance.mjs --skip-gradle  # 无 Android SDK 的机器上跳过构建相关检查
+```
+
+报告写入 `docs/verification/acceptance-<时间戳>.json`。真机项目见
+[真机验收清单](docs/verification/device-checklist.md)。
 
 ## 移动端布局验证
 
@@ -74,7 +90,7 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P3 原生能力 | **代码完成，待真机验证** |
 | P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，55/55 自测）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/call` |
 | P5 无 root 无障碍自动操作 | **代码完成，待真机联调**：`A11yService`（截图取控件树、点击/滑动/系统键，均在设备端执行）+ 应用 `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`，三重开关（App 内开关 + 系统无障碍 + 设备在线） |
-| P6 验证/签名/交付 | 未开始 |
+| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 42/42；发布包已签名（`~/.secrets`）；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
 
@@ -82,12 +98,15 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 
 ```bash
 cd ~/workspace/dsh-mobile
-tools/build-apk.sh                       # → packages/mobile-shell/android/app/build/outputs/apk/debug/app-debug.apk
-adb install -r packages/mobile-shell/android/app/build/outputs/apk/debug/app-debug.apk
+tools/build-apk.sh --release             # 或 tools/build-apk.sh 出调试包
+adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk
 ```
 
 首次启动只填 endpoint（如 `https://dsh.example.com`），App 会 `GET /gateway/healthz`
 探活并打开网关登录页；登录后凭证加密落盘，杀进程重开免登录（服务端 cookie 12h 有效期）。
+
+服务端（bridge + Caddy + DSH profile 接入）与手机端开关说明见 [docs/DEPLOY.md](docs/DEPLOY.md)，
+回退步骤见 [docs/ROLLBACK.md](docs/ROLLBACK.md)。
 
 ### 已实现的原生能力
 
@@ -106,6 +125,10 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/debug/app-deb
 
 ## 安全
 
-- 凭证只存网关 `dsh_gateway_token`，落盘用 AndroidKeystore AES-GCM 封存，不进日志、不进 git。
+- 凭证只存网关 `dsh_gateway_token`，落盘用 AndroidKeyStore AES-GCM 封存，不进日志、不进 git。
 - 默认要求 HTTPS；局域网明文/自签证书需用户显式开启。
-- `phone.*` 工具受路径白名单 + App 内确认约束。
+- **手机桥**：MCP 端点只监听 `127.0.0.1:3082`；手机连 `/bridge/ws` 必须带网关 cookie，bridge 用
+  回环请求 `dsh-passwords` 网关核验（`200` 才算通过，`302/401` 一律拒），并校验 Origin；伪造 cookie 实测返回 401。
+- **无障碍自动化**默认关闭，需「App 内开关 + 系统无障碍服务」两处都打开；关闭时工具立即返回明确错误。
+- 发布签名材料（keystore + 口令）存放在仓库外的 `~/.secrets`，`.gitignore` 覆盖 `*.jks`/`*.keystore`。
+- `phone_files_save` 只写 `Downloads/DSH`（MediaStore），不接受任意路径写入；`phone_apps` 只返回有启动器入口的应用。

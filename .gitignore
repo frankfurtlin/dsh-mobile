@@ -25,3 +25,4 @@ android/app/src/main/assets/capacitor.plugins.json
 .env
 .env.*
 !.env.example
+*.jks

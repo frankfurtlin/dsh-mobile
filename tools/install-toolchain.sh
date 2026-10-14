@@ -87,7 +87,7 @@ cat > "$ROOT/env.sh" <<EOF
 export JAVA_HOME="$JDK_DIR"
 export ANDROID_HOME="$ROOT"
 export ANDROID_SDK_ROOT="$ROOT"
-export PATH="\$JAVA_HOME/bin:\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
+export PATH="\$JAVA_HOME/bin:\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/build-tools/35.0.0:\$PATH"
 EOF
 
 log "完成。工具链根目录：$ROOT"
