@@ -101,6 +101,7 @@ for (const expected of [
   'phone_notify',
   'phone_open',
   'phone_files_save',
+  'phone_files_open',
   'phone_a11y_status',
   'phone_apps',
   'phone_launch',
@@ -135,6 +136,13 @@ check('phone_files_save returns a content uri', String(saved.parsed?.uri ?? '').
 check('phone received the files.save call', phone.calls.some((c) => c.op === 'files.save' && c.args?.name === 'report.pdf'), JSON.stringify(phone.calls.map((c) => c.op)))
 const noSource = await callTool('phone_files_save', { name: 'x.txt' })
 check('phone_files_save rejects a missing source', noSource.isError, noSource.text)
+const openedSaved = await callTool('phone_files_open', { uri: String(saved.parsed?.uri) })
+check('phone_files_open opens the saved content uri', openedSaved.parsed?.ok === true && openedSaved.parsed?.uri === saved.parsed?.uri, openedSaved.text)
+check('phone received the files.open call', phone.calls.some((c) => c.op === 'files.open' && c.args?.uri === saved.parsed?.uri), JSON.stringify(phone.calls.map((c) => c.op)))
+const openedByName = await callTool('phone_files_open', { name: 'report.pdf' })
+check('phone_files_open resolves a file by name', String(openedByName.parsed?.uri ?? '').includes('report.pdf'), openedByName.text)
+const noFileTarget = await callTool('phone_files_open', {})
+check('phone_files_open rejects a missing target', noFileTarget.isError, noFileTarget.text)
 
 console.log('Apps and automation')
 const apps = await callTool('phone_apps', {})

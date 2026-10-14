@@ -102,7 +102,7 @@ export function createTools(phones) {
     {
       name: 'phone_files_save',
       description:
-        'Save a file onto the phone so the user can open it: into Downloads/DSH (default), Pictures/DSH, Movies/DSH, Music/DSH or Documents/DSH. Provide exactly one source: base64 `data`, a URL the phone downloads, or a `path` on the phone. Returns the content URI, which phone_open can open.',
+        'Save a file onto the phone so the user can open it: into Downloads/DSH (default), Pictures/DSH, Movies/DSH, Music/DSH or Documents/DSH. Provide exactly one source: base64 `data`, a URL the phone downloads, or a `path` on the phone. Returns the content URI, which phone_files_open can open.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -124,6 +124,33 @@ export function createTools(phones) {
           mime: args.mime,
           dest: args.dest,
           [sources[0]]: args[sources[0]],
+        })
+        return { ok: true, ...result }
+      },
+    },
+    {
+      name: 'phone_files_open',
+      description:
+        'Open a file that lives on the phone with the phone\'s own viewer app, so the user sees it on screen. Pass the content URI returned by phone_files_save, a file name already saved in Downloads/DSH, or an absolute path.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ...DEVICE_PROPERTY,
+          uri: { type: 'string', description: 'content:// or file:// URI on the phone.' },
+          name: { type: 'string', description: 'File name previously saved in Downloads/DSH.' },
+          path: { type: 'string', description: 'Absolute path on the phone.' },
+          mime: { type: 'string', description: 'MIME type; guessed from the URI or name when omitted.' },
+        },
+        additionalProperties: false,
+      },
+      async handler(args) {
+        const sources = ['uri', 'name', 'path'].filter((key) => typeof args[key] === 'string' && args[key].length > 0)
+        if (sources.length !== 1) throw new Error('provide exactly one of uri, name or path')
+        const result = await phones.call(args.device, 'files.open', {
+          uri: args.uri,
+          name: args.name,
+          path: args.path,
+          mime: args.mime,
         })
         return { ok: true, ...result }
       },

@@ -6,11 +6,14 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -210,6 +213,39 @@ public class BridgeService extends Service {
   /** Operations this phone answers today; sent in `hello`. */
   private static final String[] CAPS = { "ping", "info", "shares", "clipboard.get", "clipboard.set", "notify", "open", "files.save", "files.open", "apps.list", "apps.launch", "a11y.status", "a11y.tree", "a11y.screenshot", "a11y.tap", "a11y.swipe", "a11y.global" };
 
+  /** Public folder the agent writes into (must match {@link Files}). */
+  private static final String FOLDER = "DSH";
+
+  /** MediaStore content URI of a file the agent saved into Downloads/DSH. */
+  private android.net.Uri findInDownloads(String name) {
+    if (name == null || name.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null;
+    String[] projection = { MediaStore.Downloads._ID };
+    String selection = MediaStore.Downloads.DISPLAY_NAME + "=? AND " + MediaStore.Downloads.RELATIVE_PATH + " LIKE ?";
+    String[] selectionArgs = { name, Environment.DIRECTORY_DOWNLOADS + "/" + FOLDER + "%" };
+    try (android.database.Cursor cursor = getContentResolver().query(
+        MediaStore.Downloads.EXTERNAL_CONTENT_URI, projection, selection, selectionArgs,
+        MediaStore.Downloads.DATE_ADDED + " DESC")) {
+      if (cursor != null && cursor.moveToFirst()) {
+        return ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cursor.getLong(0));
+      }
+    } catch (Exception e) {
+      Log.w(TAG, "findInDownloads failed: " + name, e);
+    }
+    return null;
+  }
+
+  /** FileProvider URI for a path this app may share; null when not shareable. */
+  private android.net.Uri uriForPath(String path) {
+    try {
+      java.io.File file = new java.io.File(path);
+      if (!file.isFile()) return null;
+      return androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
+    } catch (Exception e) {
+      Log.w(TAG, "uriForPath failed: " + path, e);
+      return null;
+    }
+  }
+
   private void handleCall(WebSocket webSocket, String id, String op, JSONObject args) {
     try {
       switch (op) {
@@ -325,6 +361,55 @@ public class BridgeService extends Service {
           if (mime == null || mime.isEmpty()) mime = guessMime(name);
           Files.Saved saved = Files.save(this, name, mime, dest, bytes);
           reply(webSocket, id, true, saved.toJson(), null);
+          return;
+        }
+        case "files.open": {
+          String uri = args == null ? null : args.optString("uri", null);
+          String name = args == null ? null : args.optString("name", null);
+          String path = args == null ? null : args.optString("path", null);
+          String mimeArg = args == null ? null : args.optString("mime", null);
+          boolean hasUri = uri != null && !uri.isEmpty();
+          boolean hasName = name != null && !name.isEmpty();
+          boolean hasPath = path != null && !path.isEmpty();
+          if (!hasUri && !hasName && !hasPath) {
+            reply(webSocket, id, false, null, "files.open needs one of uri / name / path");
+            return;
+          }
+          final String label = hasUri ? uri : (hasPath ? path : name);
+          android.net.Uri target = null;
+          if (hasUri) {
+            target = android.net.Uri.parse(uri);
+          } else if (hasPath) {
+            target = uriForPath(path);
+            if (target == null) target = findInDownloads(new java.io.File(path).getName());
+          } else {
+            target = findInDownloads(name);
+          }
+          if (target == null) {
+            reply(webSocket, id, false, null, "no such file on this phone: " + label + " (looked in Downloads/" + FOLDER + ")");
+            return;
+          }
+          final android.net.Uri targetUri = target;
+          final String targetMime = (mimeArg != null && !mimeArg.isEmpty()) ? mimeArg : guessMime(label);
+          main.post(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                Intent view = new Intent(Intent.ACTION_VIEW);
+                view.setDataAndType(targetUri, targetMime);
+                view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(view);
+              } catch (Exception e) {
+                Log.w(TAG, "files.open failed: " + targetUri, e);
+              }
+            }
+          });
+          JSONObject data = new JSONObject();
+          data.put("ok", true);
+          data.put("uri", targetUri.toString());
+          data.put("mime", targetMime);
+          reply(webSocket, id, true, data, null);
           return;
         }
         case "apps.list": {

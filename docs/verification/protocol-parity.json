@@ -1,0 +1,127 @@
+{
+  "generatedAt": "2026-10-14T15:38:13.456Z",
+  "appCaps": [
+    "ping",
+    "info",
+    "shares",
+    "clipboard.get",
+    "clipboard.set",
+    "notify",
+    "open",
+    "files.save",
+    "files.open",
+    "apps.list",
+    "apps.launch",
+    "a11y.status",
+    "a11y.tree",
+    "a11y.screenshot",
+    "a11y.tap",
+    "a11y.swipe",
+    "a11y.global"
+  ],
+  "knownOps": [
+    "ping",
+    "info",
+    "shares",
+    "clipboard.get",
+    "clipboard.set",
+    "notify",
+    "open",
+    "files.save",
+    "files.open",
+    "apps.list",
+    "apps.launch",
+    "a11y.status",
+    "a11y.tree",
+    "a11y.screenshot",
+    "a11y.tap",
+    "a11y.swipe",
+    "a11y.global"
+  ],
+  "toolOps": [
+    "ping",
+    "shares",
+    "clipboard.get",
+    "clipboard.set",
+    "notify",
+    "files.save",
+    "files.open",
+    "open",
+    "a11y.status",
+    "apps.list",
+    "apps.launch",
+    "a11y.tree",
+    "a11y.screenshot",
+    "a11y.tap",
+    "a11y.swipe",
+    "a11y.global"
+  ],
+  "toolNames": [
+    "phone_list",
+    "phone_info",
+    "phone_ping",
+    "phone_shares",
+    "phone_clipboard_get",
+    "phone_clipboard_set",
+    "phone_notify",
+    "phone_files_save",
+    "phone_files_open",
+    "phone_open",
+    "phone_a11y_status",
+    "phone_apps",
+    "phone_launch",
+    "phone_ui_tree",
+    "phone_screenshot",
+    "phone_tap",
+    "phone_swipe",
+    "phone_global",
+    "phone_call"
+  ],
+  "checks": [
+    {
+      "name": "all four surfaces were parsed",
+      "ok": true,
+      "detail": "caps=17 ops=17 fake=17 tools=19"
+    },
+    {
+      "name": "every advertised capability has a handler in the app",
+      "ok": true,
+      "detail": "advertised but missing case: "
+    },
+    {
+      "name": "every app handler is advertised in CAPS",
+      "ok": true,
+      "detail": "handled but not advertised: "
+    },
+    {
+      "name": "every tool call uses an allowed op",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the app advertises nothing outside the server allowlist",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the server only calls ops the app advertises",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the fake phone mirrors the app capabilities exactly",
+      "ok": true,
+      "detail": "only in fake: -; only in app: -"
+    },
+    {
+      "name": "tool names are unique",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "every allowed op is reachable from a tool",
+      "ok": true,
+      "detail": "no tool calls: "
+    }
+  ]
+}

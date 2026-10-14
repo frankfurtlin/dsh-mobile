@@ -21,14 +21,15 @@ dsh-mobile/
 │  └─ verification/               # 布局截图与诊断 JSON、验收报告、真机清单
 ├─ packages/
 │  ├─ mobile-shell/               # Capacitor Android App（包名 top.frankfurtlin.dshmobile）
-│  └─ bridge-server/              # Agent ↔ 手机桥（MCP + 手机 WSS，18 个 phone_* 工具）
+│  └─ bridge-server/              # Agent ↔ 手机桥（MCP + 手机 WSS，19 个 phone_* 工具）
 ├─ deploy/                        # systemd 单元、Caddy 片段、DSH profile 的 MCP patch
 ├─ tools/
 │  ├─ install-toolchain.sh        # JDK 21 + Android cmdline-tools（装 ~/.local，不碰系统）
 │  ├─ build-apk.sh                # 一键构建（debug / --release 签名包）
 │  ├─ gen-keystore.sh             # 生成发布签名材料（存 ~/.secrets，不入库）
-│  ├─ acceptance.mjs              # 自动化验收（42 项）
+│  ├─ acceptance.mjs              # 自动化验收（48 项）
 │  ├─ check-anchors.mjs           # 移动插件 CSS 哈希漂移检测
+│  ├─ check-protocol-parity.mjs   # App/服务端/假手机三方 op 一致性检查
 │  └─ shoot.mjs                   # 无头截图 + 移动端布局诊断
 ```
 
@@ -58,8 +59,10 @@ tools/build-apk.sh --release             # 发布包（已签名，约 3.5 MB）
 ## 自动化验收
 
 ```bash
-node tools/acceptance.mjs                # 42 项：工具链 / APK 与清单 / bridge 自测 / DSH 接线 / 文档
+node tools/acceptance.mjs                # 48 项：工具链 / APK 与清单 / bridge 自测 / op 一致性 / 单测 / DSH 接线 / 文档
 node tools/acceptance.mjs --skip-gradle  # 无 Android SDK 的机器上跳过构建相关检查
+node tools/check-protocol-parity.mjs     # 只跑 App / 服务端 / 假手机 的三方 op 一致性（9 项）
+cd packages/mobile-shell/android && ./gradlew testDebugUnitTest   # 端点解析单测（10 项）
 ```
 
 报告写入 `docs/verification/acceptance-<时间戳>.json`。真机项目见
@@ -88,9 +91,9 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P1 移动端 UI 选型 + 线上安装 | **完成**：选定 `dsh-mobile-xc`（回退 `@qingshanyuluo/dsh-client-ui-mobile`）；已装进 `web` profile，**重启 dsh web 后生效** |
 | P2 App 骨架 + endpoint 登录 | **代码完成，待真机验证**：调试 APK 已产出 |
 | P3 原生能力 | **代码完成，待真机验证** |
-| P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，55/55 自测）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/call` |
+| P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws`，网关 cookie 核验，60/60 自测 + 9/9 op 一致性）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/files_open/call` |
 | P5 无 root 无障碍自动操作 | **代码完成，待真机联调**：`A11yService`（截图取控件树、点击/滑动/系统键，均在设备端执行）+ 应用 `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`，三重开关（App 内开关 + 系统无障碍 + 设备在线） |
-| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 42/42；发布包已签名（`~/.secrets`）；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
+| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 48/48（含 10 项端点单测、9 项 op 一致性）；发布包 `1.0.1` 已签名（`~/.secrets`）；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
 
@@ -119,7 +122,7 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-r
 | 分享进 DSH | 系统分享面板里出现「分享到 DSH」，文本/图片/多文件进收件箱（菜单里可打开、复制、清空） |
 | 剪贴板 | `DshMobile.copyText/getClipboard` |
 | 屏幕常亮 | 菜单开关 + `DshMobile.setKeepAwake(bool)`，长回答流式期间不被息屏打断 |
-| 手机桥 | App 前台服务保持一条已认证 WSS `/bridge/ws`；Agent 侧经 MCP 工具 `phone_*` 访问手机（剪贴板读写、通知、打开链接、保存文件到 Downloads/DSH、通用直通 `phone_call`）；`DshMobile.bridgeStatus()` 可查连接状态 |
+| 手机桥 | App 前台服务保持一条已认证 WSS `/bridge/ws`；Agent 侧经 MCP 工具 `phone_*` 访问手机（剪贴板读写、通知、打开链接、保存文件到 Downloads/DSH、用手机自带 App 打开文件 `phone_files_open`、通用直通 `phone_call`）；`DshMobile.bridgeStatus()` 可查连接状态 |
 | 无障碍自动化 | 手机端 `A11yService` 在设备上执行：`phone_ui_tree` 读控件树（含 tap 中心点）、`phone_screenshot` 截图、`phone_tap`/`phone_swipe`/`phone_global` 操作、`phone_apps`/`phone_launch` 打开应用；需用户在 App 内打开开关并在系统设置里启用该服务 |
 | JS bridge | `DshMobile.getEndpoint/getAppVersion/openExternal/copyText/getClipboard/setKeepAwake/keepAwake/shares/saveBase64/bridgeStatus` |
 
@@ -131,4 +134,4 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-r
   回环请求 `dsh-passwords` 网关核验（`200` 才算通过，`302/401` 一律拒），并校验 Origin；伪造 cookie 实测返回 401。
 - **无障碍自动化**默认关闭，需「App 内开关 + 系统无障碍服务」两处都打开；关闭时工具立即返回明确错误。
 - 发布签名材料（keystore + 口令）存放在仓库外的 `~/.secrets`，`.gitignore` 覆盖 `*.jks`/`*.keystore`。
-- `phone_files_save` 只写 `Downloads/DSH`（MediaStore），不接受任意路径写入；`phone_apps` 只返回有启动器入口的应用。
+- `phone_files_save` 只写 `Downloads/DSH`（MediaStore），不接受任意路径写入；`phone_files_open` 只打开 App 能授出读权限或 MediaStore 里的文件，不接受 shell 命令；`phone_apps` 只返回有启动器入口的应用。

@@ -16,7 +16,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -142,8 +142,48 @@ if (!flags.has('--skip-bridge')) {
   const sdk = run(process.execPath, ['tools/sdk-check.mjs'], { cwd: BRIDGE_DIR })
   const tools = sdk.stdout.match(/^tools: (.+)$/m)?.[1]?.split(', ') ?? []
   check('bridge', 'DSH MCP SDK client connects', sdk.status === 0 && sdk.stdout.includes('sdk-check: ok'), sdk.stderr.trim().slice(0, 200))
-  check('bridge', 'registers 18 phone tools', tools.length === 18, `count=${tools.length}`)
+  check('bridge', 'registers 19 phone tools', tools.length === 19, `count=${tools.length}`)
   check('bridge', 'exposes the automation tools', ['phone_ui_tree', 'phone_screenshot', 'phone_tap', 'phone_swipe', 'phone_global', 'phone_apps', 'phone_launch', 'phone_a11y_status'].every((t) => tools.includes(t)), tools.join(','))
+  check('bridge', 'exposes the phone file tools', ['phone_files_save', 'phone_files_open'].every((t) => tools.includes(t)), tools.join(','))
+
+  const parity = run(process.execPath, ['tools/check-protocol-parity.mjs'], { cwd: ROOT })
+  const paritySummary = parity.stdout.match(/(\d+)\/(\d+) parity checks passed/)
+  check('bridge', 'app, server and fake phone agree on every op', parity.status === 0 && paritySummary && paritySummary[1] === paritySummary[2], paritySummary ? paritySummary[0] : parity.stderr.trim().slice(0, 200))
+  if (paritySummary) console.log(`       parity: ${paritySummary[0]}`)
+}
+
+// ----- 4b. app unit tests ---------------------------------------------------
+
+if (!flags.has('--skip-gradle') && existsSync(join(JAVA_HOME, 'bin/java'))) {
+  console.log('App unit tests')
+  const testSource = join(ANDROID_DIR, 'app/src/test/java/top/frankfurtlin/dshmobile/EndpointTest.java')
+  check('unit', 'EndpointTest present', existsSync(testSource))
+  const gradle = run('./gradlew', ['testDebugUnitTest', '--console=plain'], {
+    cwd: ANDROID_DIR,
+    env: {
+      ...process.env,
+      JAVA_HOME,
+      ANDROID_HOME,
+      PATH: `${JAVA_HOME}/bin:${join(ANDROID_HOME, 'platform-tools')}:${process.env.PATH ?? ''}`,
+    },
+  })
+  const resultsDir = join(ANDROID_DIR, 'app/build/test-results/testDebugUnitTest')
+  let tests = 0
+  let failures = 0
+  let errors = 0
+  if (existsSync(resultsDir)) {
+    for (const name of readdirSync(resultsDir)) {
+      if (!name.startsWith('TEST-') || !name.endsWith('.xml')) continue
+      const xml = readFileSync(join(resultsDir, name), 'utf8')
+      const attrs = xml.match(/<testsuite[^>]*>/)?.[0] ?? ''
+      tests += Number(attrs.match(/tests="(\d+)"/)?.[1] ?? 0)
+      failures += Number(attrs.match(/failures="(\d+)"/)?.[1] ?? 0)
+      errors += Number(attrs.match(/errors="(\d+)"/)?.[1] ?? 0)
+    }
+  }
+  check('unit', 'gradle unit test task succeeds', gradle.status === 0, gradle.stdout.split('\n').filter(Boolean).slice(-2).join(' | ').slice(0, 200))
+  check('unit', 'endpoint unit tests all pass', tests >= 10 && failures === 0 && errors === 0, `tests=${tests} failures=${failures} errors=${errors}`)
+  console.log(`       unit: ${tests} tests, ${failures} failures, ${errors} errors`)
 }
 
 // ----- 5. DSH-side wiring ---------------------------------------------------
@@ -181,6 +221,7 @@ for (const doc of [
   'docs/ROLLBACK.md',
   'docs/DELIVERY.md',
   'docs/verification/device-checklist.md',
+  'docs/verification/protocol-parity.json',
   'docs/adr/0001-mobile-ui-plugin-selection.md',
   'docs/adr/0002-app-shell-native-webview.md',
   'docs/adr/0003-agent-phone-bridge.md',

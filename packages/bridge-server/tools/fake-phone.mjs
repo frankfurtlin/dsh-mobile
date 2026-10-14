@@ -85,7 +85,13 @@ export function connectFakePhone({ url, deviceId = 'fake-phone', name = 'Fake Ph
             },
           })
         case 'files.open':
-          return answer(true, { data: { ok: true } })
+          return answer(true, {
+            data: {
+              ok: true,
+              uri: msg.args?.uri ?? (msg.args?.name ? `content://media/external/downloads/${msg.args.name}` : msg.args?.path),
+              mime: msg.args?.mime ?? 'application/octet-stream',
+            },
+          })
         case 'apps.list':
           return answer(true, {
             data: {
