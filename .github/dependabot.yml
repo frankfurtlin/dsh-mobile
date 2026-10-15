@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Capacitor shell (build-time only: the app ships a WebView, not a JS runtime)
+  - package-ecosystem: npm
+    directory: /packages/mobile-shell
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    # Capacitor majors change the Android project layout; review those by hand.
+    ignore:
+      - dependency-name: '@capacitor/*'
+        update-types: [version-update:semver-major]
+
+  # Bridge server (runtime dependency surface: `ws` only)
+  - package-ecosystem: npm
+    directory: /packages/bridge-server
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: gradle
+    directory: /packages/mobile-shell/android
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

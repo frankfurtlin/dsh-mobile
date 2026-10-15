@@ -71,4 +71,5 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=..." \
   --out docs/verification/spike-xc --label xc
 ```
 
-原始报告见 `docs/verification/spike-xc/{xc,baseline}-report.json`。
+报告落在 `--out` 指定的目录下（截图 + `*-report.json`）。这些是本机留痕，已在
+`.gitignore` 里排除，因此仓库中不提供原始文件——按上面的命令重跑即可复现。

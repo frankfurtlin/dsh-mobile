@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 报告安全问题
+    url: https://github.com/frankfurtlin/dsh-mobile/security/advisories/new
+    about: 请勿公开开 issue，改用私密漏洞报告（见 SECURITY.md）。
+  - name: 部署问题先看文档
+    url: https://github.com/frankfurtlin/dsh-mobile/blob/master/docs/DEPLOY.md
+    about: 服务端与手机端的接线步骤、以及出问题时的回滚方式。

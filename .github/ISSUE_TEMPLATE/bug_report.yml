@@ -1,0 +1,63 @@
+name: 缺陷报告
+description: 某处行为与预期不符
+labels: [bug]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: 出问题的组件
+      options:
+        - Android App（壳 / 登录 / 文件 / 分享）
+        - 移动端界面（排版 / 布局 / 表现层插件）
+        - 手机桥（bridge / phone_* 工具）
+        - 无障碍自动化
+        - 部署接线（Caddy / systemd / DSH profile）
+        - 文档
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 现象
+      description: 你做了什么，实际发生了什么，期望发生什么。
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 …
+        2. 点击 …
+        3. 观察到 …
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App 版本
+      description: 设置页可见，或 `aapt2 dump badging <apk> | head -1`。
+      placeholder: 例如 1.0.2 (versionCode 3)
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: 环境
+      description: Android 版本 / 机型、DSH 版本、是否走 HTTPS 反代。
+      placeholder: 例如 Android 15 / Pixel 8；DSH 0.2.1-alpha.2；Caddy + TLS
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或截图
+      description: 界面问题请附截图。请先确认没有夹杂会话内容、域名或凭据。
+      render: shell
+    validations:
+      required: false

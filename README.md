@@ -1,5 +1,9 @@
 # dsh-mobile
 
+[![android release](https://github.com/frankfurtlin/dsh-mobile/actions/workflows/android-release.yml/badge.svg)](https://github.com/frankfurtlin/dsh-mobile/actions/workflows/android-release.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![release](https://img.shields.io/github/v/release/frankfurtlin/dsh-mobile?display_name=tag)](https://github.com/frankfurtlin/dsh-mobile/releases)
+
 把 DeepSeek Harness（DSH）搬到手机上：**只需填 endpoint 的 Android App** + **移动端 Web 界面适配**。
 
 - App 首次启动只填服务器地址 → 跳转 dsh-passwords 网关登录页（与浏览器完全同一套登录）→
@@ -178,7 +182,7 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-r
 - 默认要求 HTTPS；局域网明文/自签证书需用户显式开启。
 - **手机桥**：MCP 端点只监听 `127.0.0.1:3082`；手机连 `/bridge/ws` 必须带网关 cookie，bridge 用
   回环请求 `dsh-passwords` 网关核验（`200` 才算通过，`302/401` 一律拒），并校验 Origin。
-  线上经 Caddy 实测（`node tools/probe-ws-auth.mjs`，报告 `docs/verification/ws-auth.json`）：
+  线上经 Caddy 实测（`node tools/probe-ws-auth.mjs --url wss://<你的域名>/bridge/ws`）：
   无 Origin → 403、有 Origin 无 cookie → 401、假 cookie → 401、错 Origin → 403，4/4 符合预期。
 - **构件下载口** `/bridge/download/<文件名>` 同样要求网关 cookie（无 cookie / 假 cookie → 401，实测于公网
   `https://dsh.example.com`），只服务 `DSH_BRIDGE_DOWNLOAD_DIR` 那一层目录：文件名必须匹配
@@ -190,3 +194,14 @@ adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-r
 - **文件浏览**只发生在两个根内：`tree:` 是用户在系统选择器里**亲手授权**的那个文件夹（SAF 持久授权，可清除），
   `downloads:` 是 `Downloads/DSH`。路径必须带根前缀，绝对路径 / `content://` / `file://` 与 `..` 越界全部拒绝
   （JVM 单测 `FileBrowserTest` 覆盖）；为遵循最小权限**不申请** `MANAGE_EXTERNAL_STORAGE`，见 [ADR-0005](docs/adr/0005-browsable-folders.md)。
+
+## 参与
+
+- 动手前请读 [CONTRIBUTING.md](CONTRIBUTING.md)：环境、验证方式与仓库约定。
+- 安全问题请走**私密渠道**，见 [SECURITY.md](SECURITY.md)——这个项目把手机的控制权交给 Agent，
+  默认假设是攻击者能访问公网，边界值得先读一遍。
+- 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 许可
+
+[MIT](LICENSE) © 2026 frankfurtlin

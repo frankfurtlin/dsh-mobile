@@ -283,6 +283,15 @@ if (!flags.has('--skip-dsh')) {
 console.log('Docs')
 for (const doc of [
   'README.md',
+  'LICENSE',
+  'CHANGELOG.md',
+  'CONTRIBUTING.md',
+  'SECURITY.md',
+  'CODE_OF_CONDUCT.md',
+  '.editorconfig',
+  '.github/workflows/android-release.yml',
+  '.github/dependabot.yml',
+  '.github/PULL_REQUEST_TEMPLATE.md',
   'docs/PLAN.md',
   'docs/DEPLOY.md',
   'docs/ROLLBACK.md',
