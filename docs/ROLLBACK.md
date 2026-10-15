@@ -27,7 +27,7 @@ adb uninstall top.frankfurtlin.dshmobile     # 或 手机设置 → 应用 → D
 ```bash
 sed -i '/DSH_BRIDGE_DOWNLOAD_/d' /etc/systemd/system/dsh-mobile-bridge.service
 systemctl daemon-reload && systemctl restart dsh-mobile-bridge
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3082/bridge/download/DSH-Mobile-1.0.2.apk   # 期望 404
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3082/bridge/download/DSH-Mobile-1.0.7.apk   # 期望 404
 ```
 
 **整体移除 bridge**：

@@ -154,6 +154,44 @@ if (!flags.has('--skip-gradle') && existsSync(join(BUILD_TOOLS, 'aapt2'))) {
   check('manifest', 'app label is DSH Mobile', /application-label:'DSH Mobile'/.test(badging.stdout))
   check('manifest', 'requests FOREGROUND_SERVICE', badging.stdout.includes('android.permission.FOREGROUND_SERVICE'))
   check('manifest', 'requests POST_NOTIFICATIONS', badging.stdout.includes('android.permission.POST_NOTIFICATIONS'))
+
+  // Android 14+ refuses to promote a service to the connectedDevice foreground type unless the app
+  // also holds one permission from the platform's device-connection set. Missing it threw
+  // SecurityException out of BridgeService.onCreate() and killed the whole app, so assert the
+  // prerequisite travels with the type that needs it.
+  const deviceConnectionPerms = [
+    'android.permission.BLUETOOTH_ADVERTISE',
+    'android.permission.BLUETOOTH_CONNECT',
+    'android.permission.BLUETOOTH_SCAN',
+    'android.permission.CHANGE_NETWORK_STATE',
+    'android.permission.CHANGE_WIFI_STATE',
+    'android.permission.CHANGE_WIFI_MULTICAST_STATE',
+    'android.permission.NFC',
+    'android.permission.TRANSMIT_IR',
+    'android.permission.UWB_RANGING',
+  ]
+  const declaredPerms = new Set(badging.stdout.match(/android\.permission\.[A-Z_]+/g) ?? [])
+  const heldPerms = deviceConnectionPerms.filter((p) => declaredPerms.has(p))
+  check('manifest', 'connectedDevice foreground service holds its prerequisite permission', heldPerms.length > 0, heldPerms.join(', ') || 'none declared')
+}
+
+// ----- 3b. source invariants -------------------------------------------------
+// Three bugs shipped because nothing asserted the invariant behind them. Stating them here is
+// cheap, and unlike a document nobody re-reads, it fails loudly when they are undone.
+
+console.log('Source invariants')
+const appSourceDir = join(ROOT, 'packages/mobile-shell/android/app/src/main')
+const credentialSrc = readFileSync(join(appSourceDir, 'java/top/frankfurtlin/dshmobile/CredentialStore.java'), 'utf8')
+const encryptInit = credentialSrc.match(/c\.init\(Cipher\.ENCRYPT_MODE[^;]*\);/)?.[0] ?? ''
+check('source', 'credential sealing never supplies its own IV', encryptInit !== '' && !encryptInit.includes('GCMParameterSpec'), encryptInit || 'no ENCRYPT_MODE init found')
+
+const mainActivitySrc = readFileSync(join(appSourceDir, 'java/top/frankfurtlin/dshmobile/MainActivity.java'), 'utf8')
+const layoutSrc = readFileSync(join(appSourceDir, 'res/layout/activity_main.xml'), 'utf8')
+if (mainActivitySrc.includes('toolbar.setPadding(')) {
+  // applySystemBars() adds the status-bar inset as padding-top; with a fixed actionBarSize height
+  // the title and the overflow button were clipped out of view and the menu became unreachable.
+  const toolbarTag = layoutSrc.match(/<androidx\.appcompat\.widget\.Toolbar[\s\S]*?\/>/)?.[0] ?? ''
+  check('source', 'toolbar may grow to absorb the status-bar padding', /layout_height="wrap_content"/.test(toolbarTag) && /android:minHeight=/.test(toolbarTag), toolbarTag.replace(/\s+/g, ' ').slice(0, 140))
 }
 
 // ----- 4. bridge server -----------------------------------------------------

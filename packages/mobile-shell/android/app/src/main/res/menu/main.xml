@@ -16,6 +16,10 @@
         android:title="@string/action_keep_awake"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_bridge"
+        android:title="@string/action_bridge"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_a11y"
         android:title="@string/action_a11y"
         app:showAsAction="never" />

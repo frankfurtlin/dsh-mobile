@@ -111,4 +111,13 @@
     <!-- The phone bridge runs as a foreground service so the agent can reach the phone while backgrounded. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!--
+      Android 14+ refuses to promote a service to the connectedDevice foreground type unless the
+      app also holds one permission from the device-connection set (BLUETOOTH_*, NFC, USB_*,
+      CHANGE_NETWORK_STATE, …). Without it startForeground() throws SecurityException from
+      BridgeService.onCreate and takes the app down. This bridge is a network connection to the
+      user's own server, so CHANGE_NETWORK_STATE is the right prerequisite; it is a normal
+      install-time permission, so it never prompts.
+    -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 </manifest>

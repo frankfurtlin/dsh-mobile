@@ -14,7 +14,7 @@
 | 线上 profile MCP 接入 | **已生效（无需重启）** | `~/.dsh/profiles/web/cordis.patch.yml` 含 `mcp-phone`（serverName `phone` → `http://127.0.0.1:3082/mcp`）；本会话里 `phone_list`/`phone_ping` 已可用；回滚副本 `cordis.patch.yml.rollback-no-mcp-phone` |
 | 移动端 UI 插件 | **已生效** | `package.json` 的 `dsh.profile.bundles` 含 `dsh-mobile-xc`；23:18 重启成功（见 `docs/verification/last-restart.log`） |
 | 手机 WSS 鉴权门（公网实测） | **4/4 符合预期** | `node tools/probe-ws-auth.mjs` → 无 Origin 403 / 无 cookie 401 / 假 cookie 401 / 错 Origin 403 |
-| 构件下载口 | **已生效** | `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk` → 无 cookie `401`；`dist/` 里的 APK 与 release 构建 sha256 一致 |
+| 构件下载口 | **已生效** | `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.7.apk` → 无 cookie `401`；`dist/` 里的 APK 与 release 构建 sha256 一致 |
 | dsh web 重启 | **已完成（23:18，无需再做）** | `docs/verification/last-restart.log` → `RESULT: SUCCESS`，之后又跑过一次 `MODE=check` 校验 |
 
 ## 0.1 让 Agent 侧 `phone_*` 工具生效（延迟重启）
@@ -61,7 +61,7 @@ cd ~/dsh-mobile && node tools/check-protocol-parity.mjs   # 9/9
 `https://dsh.example.com`（拿到网关 cookie），再打开
 
 ```
-https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk
+https://dsh.example.com/bridge/download/DSH-Mobile-1.0.7.apk
 ```
 
 装新版本时把仓库根的最新签名包复制进 `dist/` 并覆盖下载（`tools/build-apk.sh --release` 之后）：
@@ -69,8 +69,8 @@ https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk
 ```bash
 cd ~/dsh-mobile
 tools/build-apk.sh --release
-cp packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk dist/DSH-Mobile-1.0.2.apk
-sha256sum dist/DSH-Mobile-1.0.2.apk packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk  # 两行必须一致
+cp packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk dist/DSH-Mobile-1.0.7.apk
+sha256sum dist/DSH-Mobile-1.0.7.apk packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk  # 两行必须一致
 ```
 
 下载口的两个环境变量在 `deploy/dsh-mobile-bridge.service` 里：
@@ -172,7 +172,7 @@ dsh --profile mobspike --patch ~/dsh-mobile/deploy/dsh-profile-mcp-phone.yml --d
 
 ## 4. 安装手机端 APK
 
-**方式 A（远程，手机只能上网）**：见 §0.1c，手机浏览器打开 `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk`。
+**方式 A（远程，手机只能上网）**：见 §0.1c，手机浏览器打开 `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.7.apk`。
 
 **方式 B（手边能连 USB）**：
 
@@ -196,7 +196,7 @@ release 包需要先签名（见 `docs/DELIVERY.md`）：`tools/gen-keystore.sh 
 
 | 能力 | 开关位置 | 说明 |
 |---|---|---|
-| 手机桥 | App 菜单 → 启动手机桥 | 前台服务保持一条已认证 WSS；通知栏常驻 |
+| 手机桥 | App 菜单 → 手机桥（显示连接状态，可手动启停、可「从网页重新获取凭证」） | 前台服务保持一条已认证 WSS；通知栏常驻 |
 | 无障碍自动化 | App 菜单 → 无障碍自动化（内有开关 + 跳系统设置） | 需**两处**都打开：App 内开关 + 系统"已安装的服务" |
 | 通知（Agent 发通知） | 首启时授权 `POST_NOTIFICATIONS` | 拒绝则 `phone_notify` 返回失败 |
 | 后台常驻 | 系统设置 → 电池 → 不受限制 | 部分 ROM 会杀前台服务 |

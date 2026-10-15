@@ -44,7 +44,7 @@ dsh-mobile/
 │  ├─ install-toolchain.sh        # JDK 21 + Android cmdline-tools（装 ~/.local，不碰系统）
 │  ├─ build-apk.sh                # 一键构建（debug / --release 签名包）
 │  ├─ gen-keystore.sh             # 生成发布签名材料（存 ~/.secrets，不入库）
-│  ├─ acceptance.mjs              # 自动化验收（56 项）
+│  ├─ acceptance.mjs              # 自动化验收（78 项）
 │  ├─ check-anchors.mjs           # 移动插件 CSS 哈希漂移检测
 │  ├─ check-presentation.mjs      # 表现层插件：窄屏生效 + 宽屏零影响（15 项）
 │  ├─ check-protocol-parity.mjs   # App/服务端/假手机三方 op 一致性检查
@@ -79,13 +79,13 @@ tools/build-apk.sh --release             # 发布包（已签名，约 3.5 MB）
 ## 自动化验收
 
 ```bash
-node tools/acceptance.mjs                # 56 项：工具链 / APK 与清单 / bridge 自测 / op 一致性 / 单测 / DSH 接线与部署 / 文档
+node tools/acceptance.mjs                # 78 项：工具链 / APK 与清单 / bridge 自测 / op 一致性 / 单测 / DSH 接线与部署 / 文档
 node tools/acceptance.mjs --skip-gradle  # 无 Android SDK 的机器上跳过构建相关检查
 node tools/acceptance.mjs --skip-dsh     # 跳过依赖本机 ~/.dsh 与 /etc 部署状态的检查
 node tools/check-protocol-parity.mjs     # 只跑 App / 服务端 / 假手机 的三方 op 一致性（9 项）
 node tools/probe-ws-auth.mjs             # 线上手机 WSS 鉴权门：无 Origin / 无 cookie / 假 cookie / 错 Origin（4 项）
 cd packages/bridge-server && node tools/smoke.mjs                 # bridge 端到端自测（91 项）
-cd packages/mobile-shell/android && ./gradlew testDebugUnitTest   # 端点/路径解析单测（16 项）
+cd packages/mobile-shell/android && ./gradlew testDebugUnitTest   # 端点/路径解析 + 凭证 blob 单测（24 项）
 ```
 
 报告写入 `docs/verification/acceptance-<时间戳>.json`。真机项目见
@@ -129,9 +129,9 @@ node tools/check-presentation.mjs --url "http://127.0.0.1:3099/?token=<printed-t
 | P4 Agent ↔ 手机桥 | **代码完成，待真机联调**：`packages/bridge-server`（MCP `/mcp` 仅 loopback + 手机 WSS `/bridge/ws` + 已登录浏览器下载口 `/bridge/download/<file>`，网关 cookie 核验，91/91 自测 + 9/9 op 一致性）；App 侧 `BridgeService`（前台服务 + OkHttp WSS + 指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/files_open/fs_roots/fs_list/fs_read/fs_write/fs_mkdir/call` |
 | P5 无 root 无障碍自动操作 | **代码完成，待真机联调**：`A11yService`（截图取控件树、点击/滑动/系统键，均在设备端执行）+ 应用 `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`，三重开关（App 内开关 + 系统无障碍 + 设备在线） |
 | P7 文件浏览（用户授权文件夹） | **代码完成，待真机验证**：`tree:`（用户在系统选择器里挑的文件夹，授权跨重启保留）+ `downloads:`（`Downloads/DSH`）两个根；工具 `phone_fs_roots/fs_list/fs_read/fs_write/fs_mkdir`，路径形如 `tree:/Documents/report.pdf`，`..` 越界一律拒绝；见 [ADR-0005](docs/adr/0005-browsable-folders.md) |
-| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 56/56（含 16 项 JVM 单测、9 项 op 一致性、5 项线上部署断言）；发布包 `1.0.2` 已签名（`~/.secrets`）；bridge 已装成 systemd 单元、Caddy 已加 `/bridge/*`、线上 profile 已加 `mcp-phone`（**重启 dsh web 后 Agent 侧 `phone_*` 工具生效**）；`dist/DSH-Mobile-1.0.2.apk` 可经 `/bridge/download/` 直接下到手机；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
+| P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 78/78（含 24 项 JVM 单测、9 项 op 一致性、5 项线上部署断言）；发布包 `1.0.7` 已签名（`~/.secrets`）；bridge 已装成 systemd 单元、Caddy 已加 `/bridge/*`、线上 profile 已加 `mcp-phone`（**重启 dsh web 后 Agent 侧 `phone_*` 工具生效**）；`dist/DSH-Mobile-1.0.7.apk` 可经 `/bridge/download/` 直接下到手机；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
 | P9 移动端表现层 | **完成并已生效**：自研插件 `packages/mobile-presentation`（正文 16px/1.7、段落间距、占位文字对比度、禁滚动回弹、透明点击高亮、隐藏滚动条、深色微调）；锚点哈希无关 + 运行时 audit 自检；`tools/check-presentation.mjs` **15/15**（窄屏生效 + 宽屏与关掉插件时逐项一致）；见 [ADR-0007](docs/adr/0007-mobile-presentation-layer.md)。已装进线上 `web` profile 并**于 2026-10-15 23:05 重启生效** |
-| 待用户参与 | ① 手机浏览器打开上文的 `/bridge/download/DSH-Mobile-1.0.2.apk` 下载并安装；② 按 [真机验收清单](docs/verification/device-checklist.md) 逐项验收（含 P7 文件浏览 10 项）；③ 需要 Agent 读写某个文件夹时，在 App 菜单「选择可浏览的文件夹」里授权（P9 表现层已在线上生效，App 端刷新页面即可看到） |
+| 待用户参与 | ① 手机浏览器打开上文的 `/bridge/download/DSH-Mobile-1.0.7.apk` 下载并安装；② 按 [真机验收清单](docs/verification/device-checklist.md) 逐项验收（含 P7 文件浏览 10 项）；③ 需要 Agent 读写某个文件夹时，在 App 菜单「选择可浏览的文件夹」里授权（P9 表现层已在线上生效，App 端刷新页面即可看到） |
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
 
@@ -140,7 +140,7 @@ node tools/check-presentation.mjs --url "http://127.0.0.1:3099/?token=<printed-t
 **手机不在服务器旁边时（推荐）**：用手机浏览器登录 `dsh.example.com` 的 dsh web，再打开
 
 ```
-https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk
+https://dsh.example.com/bridge/download/DSH-Mobile-1.0.7.apk
 ```
 
 浏览器会带上已有的 `dsh_gateway_token` cookie，bridge 核验通过后直接下载（无 cookie 或假 cookie → `401`）。

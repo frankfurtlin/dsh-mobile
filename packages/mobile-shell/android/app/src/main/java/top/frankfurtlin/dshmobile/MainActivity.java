@@ -89,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
   private Uri cameraUri;
   private boolean keepAwake;
   private boolean bridgeRunning;
+  /** Why the bridge refused to start, if it did; surfaced in the 手机桥 dialog instead of a silent return. */
+  private String bridgeError;
   private boolean tokenChanged;
   private String pendingLoginNext = "/";
   private long backPressedAt = 0L;
@@ -411,6 +413,80 @@ public class MainActivity extends AppCompatActivity {
       .show();
   }
 
+  /**
+   * Phone-bridge state plus the two things that decide whether it connects: the foreground
+   * service and the credential the service authenticates with. Both used to fail without a word.
+   */
+  private void showBridgeDialog() {
+    String token = endpoint == null ? null : creds.load(endpoint.host);
+    StringBuilder message = new StringBuilder();
+    message.append(getString(R.string.bridge_status, BridgeService.status));
+    if (endpoint != null) message.append("\n").append(getString(R.string.bridge_server, endpoint.host));
+    message.append("\n").append(token == null || token.isEmpty()
+        ? getString(R.string.bridge_cred_missing)
+        : getString(R.string.bridge_cred_ok));
+    message.append("\n").append(webToken() == null
+        ? getString(R.string.bridge_cookie_missing)
+        : getString(R.string.bridge_cookie_ok));
+    if (bridgeError != null) message.append("\n\n").append(bridgeError);
+    if (CredentialStore.lastError != null) {
+      message.append("\n").append(getString(R.string.bridge_store_error, CredentialStore.lastError));
+    }
+    message.append("\n\n").append(getString(R.string.bridge_help));
+
+    final boolean running = bridgeRunning;
+    // Buttons rather than a list: the message is long, and a list item can end up scrolled out of
+    // an alert dialog's content area, which is exactly how 「重新获取凭证」 became unreachable.
+    new AlertDialog.Builder(this)
+      .setTitle(R.string.bridge_dialog_title)
+      .setMessage(message.toString())
+      .setPositiveButton(running ? R.string.bridge_stop : R.string.bridge_start, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          if (running) {
+            stopBridge();
+            Toast.makeText(MainActivity.this, R.string.bridge_stopped, Toast.LENGTH_SHORT).show();
+            return;
+          }
+          startBridge(true);
+          if (bridgeRunning) {
+            Toast.makeText(MainActivity.this, R.string.bridge_started, Toast.LENGTH_SHORT).show();
+          } else if (bridgeError != null) {
+            Toast.makeText(MainActivity.this, bridgeError, Toast.LENGTH_LONG).show();
+          }
+        }
+      })
+      .setNeutralButton(R.string.bridge_recapture, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+          recaptureCredential();
+        }
+      })
+      .setNegativeButton(R.string.a11y_close, null)
+      .show();
+  }
+
+  /**
+   * Re-seeds the credential from the WebView cookie jar.
+   *
+   * The WebView and {@link CredentialStore} keep separate copies of the session token, so the app
+   * can look logged in (page loads fine) while the bridge has nothing to authenticate with.
+   */
+  private void recaptureCredential() {
+    if (endpoint == null) return;
+    captureToken(web == null ? null : web.getUrl());
+    if (tokenChanged) {
+      tokenChanged = false;
+      startBridge(true);
+      Toast.makeText(this, R.string.bridge_recaptured, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    String token = creds.load(endpoint.host);
+    boolean present = token != null && !token.isEmpty();
+    Toast.makeText(this, present ? R.string.bridge_cred_ok : R.string.bridge_recapture_failed,
+        Toast.LENGTH_LONG).show();
+  }
+
   private void applySystemBars() {
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     final View toolbar = findViewById(R.id.toolbar);
@@ -500,18 +576,30 @@ public class MainActivity extends AppCompatActivity {
 
   // ----- credential handling ----------------------------------------------
 
-  /** Starts (or restarts after a token change) the bridge connection the agent uses to reach this phone. */
+  /**
+   * Starts (or restarts after a token change) the bridge connection the agent uses to reach this phone.
+   *
+   * Every refusal records why in {@link #bridgeError}. A silent return here is indistinguishable
+   * from a foreground service that died, which is what made "the app works but /healthz says no
+   * phone" impossible to diagnose from inside the app.
+   */
   private void startBridge(boolean restart) {
-    if (endpoint == null) return;
+    if (endpoint == null) return; // MainActivity finishes without an endpoint; nothing to report
     String token = creds.load(endpoint.host);
-    if (token == null || token.isEmpty()) return; // not logged in yet
+    if (token == null || token.isEmpty()) { // not logged in yet
+      bridgeError = getString(R.string.bridge_no_credential);
+      return;
+    }
     if (bridgeRunning && !restart) return;
     Intent intent = new Intent(this, BridgeService.class);
     intent.setAction(BridgeService.ACTION_START);
     try {
       androidx.core.content.ContextCompat.startForegroundService(this, intent);
       bridgeRunning = true;
+      bridgeError = null;
     } catch (Exception e) {
+      bridgeError = getString(R.string.bridge_start_failed, String.valueOf(e.getMessage()));
+      Toast.makeText(this, bridgeError, Toast.LENGTH_LONG).show();
       Log.w(TAG, "bridge start failed", e);
     }
   }
@@ -544,28 +632,40 @@ public class MainActivity extends AppCompatActivity {
     return root + "; " + gateway;
   }
 
-  /** Copy the gateway token out of the cookie jar (HttpOnly cookies are readable here). */
-  private void captureToken(String url) {
-    if (endpoint == null) return;
+  /**
+   * The gateway token exactly as the WebView's cookie jar has it, or null when the jar is empty.
+   *
+   * HttpOnly cookies are readable through {@link CookieManager}, which is what makes "copy the
+   * session out of the browser" possible at all.
+   *
+   * @return the token, or null
+   */
+  private String webToken() {
+    if (endpoint == null) return null;
     String jar = cookieJar();
-    if (jar == null) return;
-    String token = null;
+    if (jar == null) return null;
     for (String part : jar.split(";")) {
       String kv = part.trim();
       int eq = kv.indexOf('=');
       if (eq <= 0) continue;
       if (COOKIE_NAME.equals(kv.substring(0, eq).trim())) {
-        token = kv.substring(eq + 1).trim();
-        break;
+        String token = kv.substring(eq + 1).trim();
+        return token.isEmpty() ? null : token;
       }
     }
-    if (token != null && !token.isEmpty()) {
-      String known = creds.load(endpoint.host);
-      if (!token.equals(known)) {
-        Log.i(TAG, "captured gateway token for " + endpoint.host);
-        creds.save(endpoint.host, token);
-        tokenChanged = true;
-      }
+    return null;
+  }
+
+  /** Copy the gateway token out of the cookie jar into encrypted storage. */
+  private void captureToken(String url) {
+    if (endpoint == null) return;
+    String token = webToken();
+    if (token == null) return;
+    String known = creds.load(endpoint.host);
+    if (!token.equals(known)) {
+      Log.i(TAG, "captured gateway token for " + endpoint.host);
+      creds.save(endpoint.host, token);
+      tokenChanged = true;
     }
   }
 
@@ -689,6 +789,9 @@ public class MainActivity extends AppCompatActivity {
     }
     MenuItem awake = menu.findItem(R.id.action_keep_awake);
     if (awake != null) awake.setChecked(keepAwake);
+    MenuItem bridge = menu.findItem(R.id.action_bridge);
+    // The service status is the only in-app signal that the agent's side of the bridge is alive.
+    if (bridge != null) bridge.setTitle(getString(R.string.action_bridge) + " · " + BridgeService.status);
     return super.onPrepareOptionsMenu(menu);
   }
 
@@ -707,6 +810,10 @@ public class MainActivity extends AppCompatActivity {
     }
     if (id == R.id.action_inbox) {
       showInbox();
+      return true;
+    }
+    if (id == R.id.action_bridge) {
+      showBridgeDialog();
       return true;
     }
     if (id == R.id.action_a11y) {

@@ -51,6 +51,27 @@
     <string name="error_no_file_picker">没有可用的文件选择器</string>
     <string name="error_download">下载失败</string>
 
+    <!-- Phone bridge (P4): the service used to fail silently, so every reason is spelled out here. -->
+    <string name="action_bridge">手机桥</string>
+    <string name="bridge_dialog_title">手机桥</string>
+    <string name="bridge_status">连接状态：%1$s</string>
+    <string name="bridge_server">服务器：%1$s</string>
+    <string name="bridge_cred_ok">本机凭证：已保存</string>
+    <string name="bridge_cred_missing">本机凭证：缺失（手机桥不会启动）</string>
+    <string name="bridge_cookie_ok">网页 cookie：有网关 token</string>
+    <string name="bridge_cookie_missing">网页 cookie：没有网关 token（需要先登录一次）</string>
+    <string name="bridge_store_error">凭证加密失败：%1$s</string>
+    <string name="bridge_start">启动手机桥</string>
+    <string name="bridge_stop">停止手机桥</string>
+    <string name="bridge_recapture">重新获取凭证</string>
+    <string name="bridge_started">手机桥已启动，通知栏会显示状态</string>
+    <string name="bridge_stopped">手机桥已停止</string>
+    <string name="bridge_start_failed">手机桥启动失败：%1$s</string>
+    <string name="bridge_no_credential">还没有登录凭证：请先登录，或用「从网页重新获取凭证」</string>
+    <string name="bridge_recaptured">已重新获取凭证，手机桥已启动</string>
+    <string name="bridge_recapture_failed">网页里没有网关 cookie，请先在这个 App 里登录一次</string>
+    <string name="bridge_help">Agent 通过这条 WebSocket 访问你的手机（剪贴板、通知、文件、截图）。关掉 App 的前台服务就会断开。</string>
+
     <!-- Accessibility automation (P5) -->
     <string name="a11y_label">DSH 自动操作</string>
     <string name="a11y_summary">让 DSH 读取屏幕内容并模拟点击/滑动（无需 root）</string>

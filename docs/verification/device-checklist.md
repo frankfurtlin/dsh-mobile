@@ -13,7 +13,7 @@ App 版本：1.0.2（versionCode 3）       验收日期：__________
 
 | # | 步骤 | 期望 | 实测 |
 |---|---|---|---|
-| 0.1 | 手机浏览器先登录 `https://dsh.example.com`，再打开 `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk` | 直接下载 3.47 MiB 的 APK；未登录/登出状态下同一链接返回 401 | |
+| 0.1 | 手机浏览器先登录 `https://dsh.example.com`，再打开 `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.7.apk` | 直接下载 3.48 MiB 的 APK；未登录/登出状态下同一链接返回 401 | |
 | 0.2 | 点开下载好的 APK 安装 | 系统允许安装（必要时开"允许安装未知应用"）；装完桌面出现 "DSH Mobile" | |
 
 ## P2 endpoint 登录与凭证（核心）

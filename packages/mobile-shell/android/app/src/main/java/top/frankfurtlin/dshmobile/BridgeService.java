@@ -62,10 +62,19 @@ public class BridgeService extends Service {
     super.onCreate();
     createChannels();
     Notification status = statusNotification("正在连接手机桥…");
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      startForeground(STATUS_NOTIFICATION_ID, status, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
-    } else {
-      startForeground(STATUS_NOTIFICATION_ID, status);
+    // The platform refuses some foreground service types unless the app holds a prerequisite
+    // permission and throws from right here — historically that took the whole app process down
+    // (SecurityException from ActivityThread.handleCreateService). Degrade instead: keep running
+    // as a plain started service, say why in the notification, and let the WebSocket connect.
+    try {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        startForeground(STATUS_NOTIFICATION_ID, status, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
+      } else {
+        startForeground(STATUS_NOTIFICATION_ID, status);
+      }
+    } catch (RuntimeException e) {
+      Log.w(TAG, "startForeground refused; running without the foreground promotion", e);
+      updateStatus("前台服务被系统拒绝（" + e.getClass().getSimpleName() + "）：App 一退到后台就可能被断开");
     }
   }
 

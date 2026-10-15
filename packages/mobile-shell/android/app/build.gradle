@@ -10,8 +10,9 @@ android {
         // CI passes -PdshVersionCode / -PdshVersionName so each published build is
         // monotonically newer; Android refuses to install an update over an
         // existing install otherwise. Local builds keep the checked-in values.
-        versionCode(project.findProperty('dshVersionCode')?.toString()?.toInteger() ?: 3)
-        versionName(project.findProperty('dshVersionName')?.toString() ?: '1.0.2')
+        // 1.0.7 -> 10007, the same number the tag flow (v1.0.7) computes in CI.
+        versionCode(project.findProperty('dshVersionCode')?.toString()?.toInteger() ?: 10007)
+        versionName(project.findProperty('dshVersionName')?.toString() ?: '1.0.7')
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
