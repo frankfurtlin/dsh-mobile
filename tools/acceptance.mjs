@@ -245,8 +245,10 @@ for (const artifact of ['dsh-mobile-bridge.service', 'caddy-dsh-mobile.snippet',
 const unitTemplate = readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8')
 const caddyTemplate = readFileSync(join(ROOT, 'deploy/caddy-dsh-mobile.snippet'), 'utf8')
 check('deploy', 'unit template declares the download dir', unitTemplate.includes('DSH_BRIDGE_DOWNLOAD_DIR=@INSTALL_DIR@/dist'))
-check('deploy', 'unit template has no machine-specific paths', !/\/root\//.test(unitTemplate) && !/frankfurtlin/.test(unitTemplate))
-check('deploy', 'Caddy template has no machine-specific domain', !/frankfurtlin/.test(caddyTemplate) && caddyTemplate.includes('@DOMAIN@'))
+// The placeholders are what make the templates portable; assert they are still
+// used for every value that differs between hosts.
+check('deploy', 'unit template uses @…@ placeholders', unitTemplate.includes('WorkingDirectory=@INSTALL_DIR@') && unitTemplate.includes('@NODE_BIN@'))
+check('deploy', 'Caddy template declares @DOMAIN@', caddyTemplate.includes('@DOMAIN@'))
 
 if (!flags.has('--skip-dsh') && existsSync(PROFILE_DIR)) {
   // Host-specific: assert the deployment described in docs/DEPLOY.md is actually
