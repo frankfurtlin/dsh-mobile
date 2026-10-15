@@ -78,10 +78,12 @@
     <string name="a11y_description">开启后，你信任的 DSH 服务器可以读取当前屏幕的控件树、截图，并模拟点击、滑动和返回等操作，用来替你完成手机上的重复操作。DSH 不会在你未授权时使用它。</string>
     <string name="action_a11y">无障碍自动操作</string>
     <string name="a11y_dialog_title">无障碍自动操作</string>
-    <string name="a11y_status_on">系统服务：已开启</string>
-    <string name="a11y_status_off">系统服务：未开启</string>
-    <string name="a11y_allow_agent">允许 Agent 使用（本机开关）</string>
-    <string name="a11y_open_settings">打开系统无障碍设置</string>
+    <string name="a11y_service_label">系统服务</string>
+    <string name="a11y_state_on">已开启</string>
+    <string name="a11y_state_off">未开启</string>
+    <string name="a11y_allow_agent">允许 Agent 使用</string>
+    <string name="a11y_local_hint">这是 App 内的第二道开关：关掉后系统服务仍开着，但 Agent 不能读屏或点击。</string>
+    <string name="a11y_settings">无障碍设置</string>
     <string name="a11y_close">关闭</string>
     <string name="a11y_help">在系统设置里找到「已下载的应用 → DSH Mobile → DSH 自动操作」并开启。部分机型（Android 13+ 侧载安装）需要先点右上角「允许受限设置」。</string>
     <string name="a11y_allow_on">已允许 Agent 使用无障碍</string>

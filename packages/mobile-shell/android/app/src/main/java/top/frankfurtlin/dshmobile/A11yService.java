@@ -142,36 +142,59 @@ public class A11yService extends AccessibilityService {
   public String screenshot(final int maxBytes) throws Exception {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) throw new IllegalStateException("screenshot needs Android 11+");
     final int budget = maxBytes > 0 ? maxBytes : DEFAULT_MAX_IMAGE_BYTES;
-    return onMain(() -> {
-      final Object[] shot = new Object[1];
-      final CountDownLatch done = new CountDownLatch(1);
-      takeScreenshot(Display.DEFAULT_DISPLAY, getMainExecutor(), new TakeScreenshotCallback() {
-        @Override
-        public void onSuccess(ScreenshotResult result) {
-          HardwareBuffer buffer = null;
-          try {
-            buffer = result.getHardwareBuffer();
-            Bitmap bitmap = Bitmap.wrapHardwareBuffer(buffer, result.getColorSpace());
-            if (bitmap == null) throw new IllegalStateException("cannot read the screenshot bitmap");
-            shot[0] = encodeJpeg(bitmap, budget);
-          } catch (Exception e) {
-            shot[0] = e;
-          } finally {
-            if (buffer != null) buffer.close();
-            done.countDown();
-          }
-        }
+    final Object[] shot = new Object[1];        // the wrapped Bitmap on success, an Exception on failure
+    final HardwareBuffer[] buffer = new HardwareBuffer[1];
+    final CountDownLatch done = new CountDownLatch(1);
+    // Same trap as gesture(): takeScreenshot() belongs on the main thread and getMainExecutor()
+    // delivers its callback there too, so awaiting it on the main thread guaranteed a timeout.
+    // Wait on the calling thread and keep the buffer open until the JPEG is encoded.
+    main.post(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          takeScreenshot(Display.DEFAULT_DISPLAY, getMainExecutor(), new TakeScreenshotCallback() {
+            @Override
+            public void onSuccess(ScreenshotResult result) {
+              try {
+                buffer[0] = result.getHardwareBuffer();
+                Bitmap bitmap = Bitmap.wrapHardwareBuffer(buffer[0], result.getColorSpace());
+                if (bitmap == null) throw new IllegalStateException("cannot read the screenshot bitmap");
+                shot[0] = bitmap;
+              } catch (Exception e) {
+                shot[0] = e;
+              } finally {
+                done.countDown();
+              }
+            }
 
-        @Override
-        public void onFailure(int errorCode) {
-          shot[0] = new IllegalStateException("screenshot failed with code " + errorCode);
+            @Override
+            public void onFailure(int errorCode) {
+              shot[0] = new IllegalStateException("screenshot failed with code " + errorCode);
+              done.countDown();
+            }
+          });
+        } catch (Exception e) {
+          shot[0] = e;
           done.countDown();
         }
-      });
-      if (!done.await(OP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) throw new IllegalStateException("screenshot timed out");
-      if (shot[0] instanceof Exception) throw (Exception) shot[0];
-      return (String) shot[0];
+      }
     });
+    if (!done.await(OP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+      if (buffer[0] != null) buffer[0].close();
+      throw new IllegalStateException("screenshot timed out");
+    }
+    try {
+      if (shot[0] instanceof Exception) throw (Exception) shot[0];
+      Bitmap wrapped = (Bitmap) shot[0];
+      // compress() reads through the hardware buffer; a software copy keeps the scaling path simple
+      // and gets the whole encode off the main thread (it used to run inside the callback).
+      Bitmap source = wrapped.getConfig() == Bitmap.Config.HARDWARE
+        ? wrapped.copy(Bitmap.Config.ARGB_8888, false)
+        : wrapped;
+      return encodeJpeg(source, budget);
+    } finally {
+      if (buffer[0] != null) buffer[0].close();
+    }
   }
 
   /** Scales and re-encodes until the JPEG fits the byte budget. */
@@ -228,28 +251,44 @@ public class A11yService extends AccessibilityService {
   }
 
   private boolean gesture(final Path path, final long startMs, final long durationMs) throws Exception {
-    return onMain(() -> {
-      GestureDescription.Builder builder = new GestureDescription.Builder();
-      builder.addStroke(new GestureDescription.StrokeDescription(path, startMs, durationMs));
-      final CountDownLatch done = new CountDownLatch(1);
-      final boolean[] ok = new boolean[1];
-      boolean dispatched = dispatchGesture(builder.build(), new GestureResultCallback() {
-        @Override
-        public void onCompleted(GestureDescription description) {
-          ok[0] = true;
-          done.countDown();
-        }
+    GestureDescription.Builder builder = new GestureDescription.Builder();
+    builder.addStroke(new GestureDescription.StrokeDescription(path, startMs, durationMs));
+    final GestureDescription description = builder.build();
+    final CountDownLatch done = new CountDownLatch(1);
+    final boolean[] ok = new boolean[1];
+    final Exception[] failure = new Exception[1];
+    // dispatchGesture() must be called from the main thread, but its result callback is posted back
+    // to the main thread as well. Awaiting that callback *inside* onMain() — which is what this did
+    // — froze the UI for the whole timeout, ANR'd the app and took the bridge socket down with it:
+    // every tap or swipe from the agent ended with the phone going offline. Dispatch on the main
+    // thread, wait on the calling one.
+    main.post(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          boolean dispatched = dispatchGesture(description, new GestureResultCallback() {
+            @Override
+            public void onCompleted(GestureDescription d) {
+              ok[0] = true;
+              done.countDown();
+            }
 
-        @Override
-        public void onCancelled(GestureDescription description) {
-          ok[0] = false;
+            @Override
+            public void onCancelled(GestureDescription d) {
+              ok[0] = false;
+              done.countDown();
+            }
+          }, main);
+          if (!dispatched) throw new IllegalStateException("the gesture was not accepted");
+        } catch (Exception e) {
+          failure[0] = e;
           done.countDown();
         }
-      }, main);
-      if (!dispatched) throw new IllegalStateException("the gesture was not accepted");
-      if (!done.await(OP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) throw new IllegalStateException("the gesture timed out");
-      return ok[0];
+      }
     });
+    if (!done.await(OP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) throw new IllegalStateException("the gesture timed out");
+    if (failure[0] != null) throw failure[0];
+    return ok[0];
   }
 
   /** back / home / recents / notifications / quick_settings. */

@@ -3,4 +3,7 @@
     <color name="colorPrimary">#1F2937</color>
     <color name="colorPrimaryDark">#111827</color>
     <color name="colorAccent">#4D6BFE</color>
+    <!-- 「系统服务未开启」is a state the user has to act on, so it gets a warning tint rather
+         than the theme's muted secondary colour. -->
+    <color name="stateOff">#D97706</color>
 </resources>

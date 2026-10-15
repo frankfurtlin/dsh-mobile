@@ -35,11 +35,14 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -385,23 +388,44 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  /** Accessibility automation needs both the system service and this app's own switch. */
+  /**
+   * Accessibility automation needs both the system service and this app's own switch. The dialog
+   * is a custom view rather than a message+list: a long message and a list cannot share an alert
+   * dialog's content area (see showBridgeDialog), which is how this switch went missing in 1.0.7.
+   */
   private void showA11yDialog() {
     final boolean serviceOn = A11yService.ready();
-    final boolean allowed = settings.a11yEnabled();
-    String status = serviceOn ? getString(R.string.a11y_status_on) : getString(R.string.a11y_status_off);
-    String toggle = allowed ? getString(R.string.a11y_allow_off) : getString(R.string.a11y_allow_on);
+    View content = getLayoutInflater().inflate(R.layout.dialog_a11y, null);
+
+    // The system side is read-only: only Android settings can change it, so it gets a state word
+    // instead of a control — accent when on, a warning tint when the user still has to act.
+    TextView state = content.findViewById(R.id.a11y_service_state);
+    state.setText(serviceOn ? R.string.a11y_state_on : R.string.a11y_state_off);
+    state.setTextColor(ContextCompat.getColor(this, serviceOn ? R.color.colorAccent : R.color.stateOff));
+
+    final SwitchCompat toggle = content.findViewById(R.id.a11y_local_switch);
+    toggle.setChecked(settings.a11yEnabled());
+    // The switch and its row both flip it, and the listener is the only place that persists it.
+    toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton button, boolean checked) {
+        settings.setA11yEnabled(checked);
+        Toast.makeText(MainActivity.this, checked ? R.string.a11y_allow_on : R.string.a11y_allow_off, Toast.LENGTH_SHORT).show();
+      }
+    });
+    content.findViewById(R.id.a11y_local_row).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        toggle.setChecked(!toggle.isChecked());
+      }
+    });
+
     new AlertDialog.Builder(this)
       .setTitle(R.string.a11y_dialog_title)
-      .setMessage(status + "\n\n" + getString(R.string.a11y_help))
-      .setItems(new String[] { toggle, getString(R.string.a11y_open_settings) }, new DialogInterface.OnClickListener() {
+      .setView(content)
+      .setNeutralButton(R.string.a11y_settings, new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialog, int which) {
-          if (which == 0) {
-            settings.setA11yEnabled(!allowed);
-            Toast.makeText(MainActivity.this, !allowed ? R.string.a11y_allow_on : R.string.a11y_allow_off, Toast.LENGTH_SHORT).show();
-            return;
-          }
           try {
             startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
           } catch (Exception e) {

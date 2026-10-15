@@ -120,4 +120,12 @@
       install-time permission, so it never prompts.
     -->
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!--
+      Declared so an APK handed to the installer by `files.open` is a first-class install source:
+      the app then shows up under 设置 → 安装未知应用, which is the gate stock Android checks.
+      MIUI let the install through even without it (measured on 24031PN0DC), so this is a
+      defensive declaration, not a fix for an observed failure. Installs still need the user's
+      confirmation in the system dialog.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>
