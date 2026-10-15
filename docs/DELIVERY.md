@@ -51,7 +51,7 @@ aapt2 dump badging  packages/mobile-shell/android/app/build/outputs/apk/release/
 ## 3. 自动化验收
 
 ```bash
-node tools/acceptance.mjs                      # 全部检查（当前 78/78）；结果写 docs/verification/acceptance-<时间戳>.json
+node tools/acceptance.mjs                      # 全部检查（当前 80/80）；结果写 docs/verification/acceptance-<时间戳>.json
 node tools/acceptance.mjs --skip-gradle        # 跳过需要 Android SDK 的检查（CI / 无工具链机器）
 node tools/acceptance.mjs --skip-dsh           # 跳过依赖本机 ~/.dsh 与 /etc 部署状态的检查
 node tools/check-protocol-parity.mjs           # App / 服务端 / 假手机 三方 op 一致性（当前 9/9）

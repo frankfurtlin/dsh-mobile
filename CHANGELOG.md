@@ -29,10 +29,17 @@
 - 为这次暴露的三个坑补上守卫：`CredentialStoreTest`（8 项，跑在 JVM 上——`seal`/`open` 的往返、
   IV 必须每次由 cipher 生成、截断/篡改/换 key 一律拒绝、blob 布局）；`tools/acceptance.mjs` 新增三条
   断言——APK 清单里 `connectedDevice` 前台服务必须带设备连接类前置权限、凭证加密不得自带 IV、
-  工具栏必须能随状态栏 inset 长高。单测总数 16 → 24。
+  工具栏必须能随状态栏 inset 长高，以及两个 `package-lock.json` 的 `resolved` 必须来自公开
+  registry。单测总数 16 → 24。
 
 ### 修复
 
+- **CI 第一次运行就死在 `Sync Capacitor`**：两个 `package-lock.json` 的 `resolved` 全部指向
+  `http://mirrors.tencentyun.com/npm`（腾讯云内网镜像，在本机解析成 link-local 的 `169.254.0.3`），
+  GitHub runner 解析不到这个主机名，`npm ci` 直接失败。它死在签名之前，看起来像 secret 配错了。
+  现已把两处改为 `https://registry.npmjs.org`（版本号与 `integrity` 未动），并把 `npm ci` 从
+  `Sync Capacitor` 里拆成独立步骤，以后再出问题能直接落到具体一步；验收新增两条断言，禁止
+  lockfile 指向非公开 registry。
 - **登录凭证其实从来没写进过存储**：`CredentialStore.encrypt()` 自己生成 IV 再传给 `Cipher.init`，
   但 AndroidKeyStore 的密钥默认 `setRandomizedEncryptionRequired(true)`，会以
   `InvalidAlgorithmParameterException: Caller-provided IV not permitted` 拒绝调用方提供的 IV。

@@ -185,6 +185,20 @@ const credentialSrc = readFileSync(join(appSourceDir, 'java/top/frankfurtlin/dsh
 const encryptInit = credentialSrc.match(/c\.init\(Cipher\.ENCRYPT_MODE[^;]*\);/)?.[0] ?? ''
 check('source', 'credential sealing never supplies its own IV', encryptInit !== '' && !encryptInit.includes('GCMParameterSpec'), encryptInit || 'no ENCRYPT_MODE init found')
 
+// Dependencies must resolve from a registry that exists outside this machine. The lockfiles were
+// once baked against mirrors.tencentyun.com — which resolves to the link-local 169.254.0.3 here and
+// nowhere else — so `npm ci` died in CI at "Sync Capacitor", before the run ever reached the signing
+// secrets, and looked like a secrets problem. Add your own public registry to this list if you move.
+const PUBLIC_REGISTRIES = ['registry.npmjs.org']
+for (const lock of ['packages/mobile-shell/package-lock.json', 'packages/bridge-server/package-lock.json']) {
+  const lockPath = join(ROOT, lock)
+  if (!existsSync(lockPath)) continue
+  const hosts = [...new Set((readFileSync(lockPath, 'utf8').match(/"resolved": "https?:\/\/[^\/"]+/g) ?? [])
+    .map((url) => url.replace(/.*\/\//, '')))]
+  const unreachableHosts = hosts.filter((host) => !PUBLIC_REGISTRIES.includes(host))
+  check('deps', `${lock} resolves from a public registry`, unreachableHosts.length === 0, unreachableHosts.join(', ') || `hosts=${hosts.join(',')}`)
+}
+
 const mainActivitySrc = readFileSync(join(appSourceDir, 'java/top/frankfurtlin/dshmobile/MainActivity.java'), 'utf8')
 const layoutSrc = readFileSync(join(appSourceDir, 'res/layout/activity_main.xml'), 'utf8')
 if (mainActivitySrc.includes('toolbar.setPadding(')) {

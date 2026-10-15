@@ -57,7 +57,7 @@
 | **P4 Agent ↔ 手机桥** | 服务端 bridge（MCP over Streamable HTTP + 手机 WSS，网关 cookie 核验）+ App 侧前台服务 WSS 客户端（OkHttp，指数退避重连）；工具 `phone_list/ping/info/shares/clipboard_get/set/notify/open/files_save/files_open/fs_roots/fs_list/fs_read/fs_write/fs_mkdir/call`（`fs_*` 见 P7）；SAF/MediaStore 授权、路径白名单、危险操作确认、重连与超时 | 对话中让 Agent 读到手机上的内容；未认证连接被拒 | 3–5d | ✅ 代码完成 + 自测 91/91 与 op 一致性 9/9（ADR-0003；三条鉴权路径实测 + DSH 同款 MCP SDK 客户端连通；APK 含 `BridgeService`/`Files`），**待真机联调** |
 | **P5 无 root 无障碍自动操作** | `AccessibilityService`：截图（MediaProjection/无障碍）、点击、滑动、返回、启动应用；敏感操作 App 内二次确认与审计；系统设置引导页 | 在手机上通过对话完成"打开某 App 并点击某按钮"；未授权时优雅降级 | 2–3d | ✅ 代码完成 + 自测 91/91（`A11yService` 截图/控件树/手势 + `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`；App 内开关 + 系统设置引导），**待真机验证** |
 | **P7 文件浏览（用户授权文件夹）** | 两个根：`tree:`（`ACTION_OPEN_DOCUMENT_TREE` 让用户亲手挑文件夹 + `takePersistableUriPermission` 持久授权）与 `downloads:`（MediaStore `Downloads/DSH`）；`FileBrowser` 统一 `根:/相对路径` 寻址、`..` 越界拒绝；App 菜单可查看/清除授权；工具 `phone_fs_roots/fs_list/fs_read/fs_write/fs_mkdir` | Agent 能列目录、读真实文件、写回结果；越界与绝对路径被拒；不申请 `MANAGE_EXTERNAL_STORAGE` | 1–2d | ✅ 代码完成：App 侧 `FileBrowser`（6 项 JVM 单测）+ bridge 5 个工具 + 91/91 自测 + 9/9 一致性（ADR-0005），**待真机验证** |
-| **P6 验证与交付** | 自动化验收脚本 + 真机清单、release 签名（keystore 存 `~/.secrets`）、PWA/iOS 说明、一键构建与回滚文档 | 全部验收项通过，第三方可照文档装起来 | 1d | ✅ 完成：`tools/acceptance.mjs` **78/78**（含 24 项 JVM 单测、9 项 op 一致性、5 项线上部署断言）；`tools/gen-keystore.sh` + `--release` 签名包 `1.0.2`（apksigner 校验通过）；`docs/DEPLOY.md`、`docs/ROLLBACK.md`、`docs/DELIVERY.md`、`docs/verification/device-checklist.md`；`tools/check-anchors.mjs` 漂移检测（xc 28/33=85%）；线上 dsh web 已于 2026-10-14 23:18 重启（`phone_*` 工具与移动布局均已生效，见 `docs/verification/last-restart.log`）；`dist/` 里的签名包可由 bridge 的 `/bridge/download/` 直接下到手机；**剩余动作**：真机逐项验收 |
+| **P6 验证与交付** | 自动化验收脚本 + 真机清单、release 签名（keystore 存 `~/.secrets`）、PWA/iOS 说明、一键构建与回滚文档 | 全部验收项通过，第三方可照文档装起来 | 1d | ✅ 完成：`tools/acceptance.mjs` **80/80**（含 24 项 JVM 单测、9 项 op 一致性、5 项线上部署断言）；`tools/gen-keystore.sh` + `--release` 签名包 `1.0.2`（apksigner 校验通过）；`docs/DEPLOY.md`、`docs/ROLLBACK.md`、`docs/DELIVERY.md`、`docs/verification/device-checklist.md`；`tools/check-anchors.mjs` 漂移检测（xc 28/33=85%）；线上 dsh web 已于 2026-10-14 23:18 重启（`phone_*` 工具与移动布局均已生效，见 `docs/verification/last-restart.log`）；`dist/` 里的签名包可由 bridge 的 `/bridge/download/` 直接下到手机；**剩余动作**：真机逐项验收 |
 
 | **P9 移动端表现层** | 自研 DSH 插件 `packages/mobile-presentation`：正文排版（16px/1.7 + 段落间距 + 标题/代码层级）、占位文字对比度、原生触感（禁滚动回弹、透明点击高亮、隐藏滚动条）、深色微调；要求锚点哈希无关、桌面零影响 | 影子 profile 上手机端生效、桌面端与关掉插件时逐项一致；DSH 升级后锚点漂移可被检出 | 0.5d | ✅ 完成：`tools/check-presentation.mjs` **15/15**；已装进线上 `web` profile（`bundles` 含 `dsh-mobile-presentation`）并**于 2026-10-15 23:05 重启生效**；见 [ADR-0007](../adr/0007-mobile-presentation-layer.md) |
 
@@ -74,7 +74,7 @@
 
 ## 6. 验收标准
 
-自动化部分（`node tools/acceptance.mjs`，当前 **78/78**）：
+自动化部分（`node tools/acceptance.mjs`，当前 **80/80**）：
 
 1. 工具链可用（JDK 21 / aapt2 / apksigner）、调试包与签名发布包均产出并通过 `apksigner verify`。
 2. APK 清单正确：5 个组件（MainActivity / SetupActivity / ShareTargetActivity / A11yService / BridgeService）、

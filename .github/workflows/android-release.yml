@@ -45,13 +45,18 @@ jobs:
         with:
           packages: 'platforms;android-36'
 
+      - name: Install shell dependencies
+        working-directory: packages/mobile-shell
+        # Split from the sync step so a dependency failure names itself instead of hiding behind
+        # the web-layer step: npm ci uses the `resolved` URLs baked into package-lock.json, so a
+        # lockfile pointing at a private mirror fails here and nowhere else.
+        run: npm ci
+
       - name: Sync Capacitor
         working-directory: packages/mobile-shell
         # android/app/src/main/assets/public and capacitor.config.json are
         # generated (git-ignored), so the web layer has to be materialised here.
-        run: |
-          npm ci
-          npx cap sync android
+        run: npx cap sync android
 
       - name: Resolve version
         id: v
