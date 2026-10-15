@@ -1,0 +1,124 @@
+{
+  "generatedAt": "2026-10-15T14:50:22.736Z",
+  "url": "http://127.0.0.1:3099/?token=Wga5-Uvx7Jkeqw0787ev4LfKXykYcR-jy9bAoM8a-ps",
+  "mobile": {
+    "styleInjected": true,
+    "grid": "390px 0px 0px",
+    "proseFont": "16px",
+    "proseLineHeight": "27.2px",
+    "proseColor": "rgb(15, 17, 21)",
+    "placeholderColor": "rgb(139, 146, 156)",
+    "overscroll": "none",
+    "tapHighlight": "rgba(0, 0, 0, 0)",
+    "audit": {
+      "narrow": true,
+      "anchors": 4,
+      "missing": []
+    }
+  },
+  "desktop": {
+    "styleInjected": true,
+    "grid": "280px 1160px 0px",
+    "proseFont": "14px",
+    "proseLineHeight": "24px",
+    "proseColor": "rgb(15, 17, 21)",
+    "placeholderColor": "rgb(173, 178, 184)",
+    "overscroll": "auto",
+    "tapHighlight": "rgba(0, 0, 0, 0.18)",
+    "audit": {
+      "narrow": false,
+      "anchors": 4,
+      "missing": []
+    }
+  },
+  "results": [
+    {
+      "group": "mobile",
+      "name": "stylesheet injected",
+      "ok": true
+    },
+    {
+      "group": "mobile",
+      "name": "prose body text is 16px",
+      "ok": true,
+      "detail": "got 16px"
+    },
+    {
+      "group": "mobile",
+      "name": "prose line-height follows the 1.7 rhythm",
+      "ok": true,
+      "detail": "got 27.2px"
+    },
+    {
+      "group": "mobile",
+      "name": "overscroll bounce disabled",
+      "ok": true,
+      "detail": "got none"
+    },
+    {
+      "group": "mobile",
+      "name": "tap highlight transparent",
+      "ok": true,
+      "detail": "got rgba(0, 0, 0, 0)"
+    },
+    {
+      "group": "mobile",
+      "name": "content column still full width (xc intact)",
+      "ok": true,
+      "detail": "got 390px 0px 0px"
+    },
+    {
+      "group": "mobile",
+      "name": "anchor audit available",
+      "ok": true
+    },
+    {
+      "group": "mobile",
+      "name": "no drifted anchors",
+      "ok": true,
+      "detail": "missing: none"
+    },
+    {
+      "group": "desktop",
+      "name": "grid unchanged with/without the plugin",
+      "ok": true,
+      "detail": "280px 1160px 0px vs 280px 1160px 0px"
+    },
+    {
+      "group": "desktop",
+      "name": "proseFont unchanged with/without the plugin",
+      "ok": true,
+      "detail": "14px vs 14px"
+    },
+    {
+      "group": "desktop",
+      "name": "proseLineHeight unchanged with/without the plugin",
+      "ok": true,
+      "detail": "24px vs 24px"
+    },
+    {
+      "group": "desktop",
+      "name": "proseColor unchanged with/without the plugin",
+      "ok": true,
+      "detail": "rgb(15, 17, 21) vs rgb(15, 17, 21)"
+    },
+    {
+      "group": "desktop",
+      "name": "placeholderColor unchanged with/without the plugin",
+      "ok": true,
+      "detail": "rgb(173, 178, 184) vs rgb(173, 178, 184)"
+    },
+    {
+      "group": "desktop",
+      "name": "overscroll unchanged with/without the plugin",
+      "ok": true,
+      "detail": "auto vs auto"
+    },
+    {
+      "group": "desktop",
+      "name": "tapHighlight unchanged with/without the plugin",
+      "ok": true,
+      "detail": "rgba(0, 0, 0, 0.18) vs rgba(0, 0, 0, 0.18)"
+    }
+  ]
+}

@@ -191,13 +191,24 @@ for (const dir of pluginDirs()) {
       tokens.add(token)
     }
   }
+  const pluginName = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name ?? basename(dir)
   const all = [...tokens].sort()
+  // A plugin with no CSS-module hashes at all is not broken: it means it anchors
+  // on semantic class-name fragments / DOM structure instead, which does not
+  // drift with the frontend build (ADR-0001's hash-free strategy). This static
+  // scan cannot judge those, so report them as n/a rather than a failure; such
+  // plugins carry their own runtime anchor audit.
+  if (all.length === 0) {
+    report.push({ plugin: pluginName, dir, anchors: 0, hits: 0, missing: [], hitRate: null, status: 'hash-free' })
+    console.log(`n/a  ${pluginName}: no build-hash anchors — hash-free strategy, static scan does not apply`)
+    continue
+  }
   const missing = all.filter((token) => !corpus.includes(token))
   const hits = all.length - missing.length
-  const rate = all.length === 0 ? 0 : hits / all.length
+  const rate = hits / all.length
   worst = Math.min(worst, rate)
   const entry = {
-    plugin: JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name ?? basename(dir),
+    plugin: pluginName,
     dir,
     anchors: all.length,
     hits,
@@ -216,7 +227,7 @@ if (jsonOut) {
   console.log(`\nwrote ${jsonOut}`)
 }
 
-const drifted = report.filter((entry) => entry.status !== 'ok')
+const drifted = report.filter((entry) => entry.status === 'drifted')
 if (drifted.length > 0) {
   console.log(`\n${drifted.length} plugin(s) below the ${(min * 100).toFixed(0)}% threshold - re-pin them or switch to the coarser fallback (see docs/adr/0001).`)
   process.exit(1)

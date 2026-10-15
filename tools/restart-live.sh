@@ -26,13 +26,23 @@ set -uo pipefail
 UNIT=deepseek-harness.service
 PROFILE=~/.dsh/profiles/web
 PKG="$PROFILE/package.json"
-ROLLBACK="$PROFILE/package.json.rollback-no-mobile-xc"
+# Pre-change snapshot restored when the restart fails. Rollback files are named
+# after what they *remove*, so prefer the most recent, most specific one: a
+# mobile-presentation failure should not also tear down the xc mobile layout.
+# Override with ROLLBACK_PKG=<path>.
+ROLLBACK="${ROLLBACK_PKG:-}"
 PATCH="$PROFILE/cordis.patch.yml"
 PATCH_ROLLBACK="$PROFILE/cordis.patch.yml.rollback-no-mcp-phone"
 BRIDGE_UNIT=dsh-mobile-bridge.service
 OUT=~/workspace/dsh-mobile/docs/verification/last-restart.log
 MODE="${MODE:-restart}"
 WAIT="${WAIT:-90}"
+
+if [ -z "$ROLLBACK" ]; then
+  for candidate in "$PROFILE/package.json.rollback-no-presentation" "$PROFILE/package.json.rollback-no-mobile-xc"; do
+    if [ -f "$candidate" ]; then ROLLBACK="$candidate"; break; fi
+  done
+fi
 
 mkdir -p "$(dirname "$OUT")"
 exec >>"$OUT" 2>&1
@@ -76,6 +86,7 @@ log "=== restart-live start (mode=$MODE) ==="
 summarize
 log "profile bundles: $(python3 -c "import json;print(','.join(json.load(open('$PKG'))['dsh']['profile']['bundles']))" 2>/dev/null)"
 log "mcp patch: $(grep -c 'mcp-phone' "$PATCH" 2>/dev/null || echo 0) mcp-phone entries in $PATCH"
+log "rollback snapshot: ${ROLLBACK:-<none>}"
 
 if [ "$MODE" = "check" ]; then
   if wait_up; then log "RESULT: CHECK OK (no change made)"; else log "RESULT: CHECK FAILED"; fi

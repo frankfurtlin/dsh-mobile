@@ -21,6 +21,7 @@ dsh-mobile/
 │  └─ verification/               # 布局截图与诊断 JSON、验收报告、真机清单
 ├─ packages/
 │  ├─ mobile-shell/               # Capacitor Android App（包名 top.frankfurtlin.dshmobile）
+│  ├─ mobile-presentation/        # 自研 DSH 插件：移动端排版/留白/对比度/触感（桌面零影响）
 │  └─ bridge-server/              # Agent ↔ 手机桥（MCP + 手机 WSS + 构件下载口，24 个 phone_* 工具）
 ├─ dist/                          # 供手机浏览器下载的签名包（bridge 的 /bridge/download/ 从这里取）
 ├─ deploy/                        # systemd 单元、Caddy 片段、DSH profile 的 MCP patch
@@ -30,6 +31,7 @@ dsh-mobile/
 │  ├─ gen-keystore.sh             # 生成发布签名材料（存 ~/.secrets，不入库）
 │  ├─ acceptance.mjs              # 自动化验收（56 项）
 │  ├─ check-anchors.mjs           # 移动插件 CSS 哈希漂移检测
+│  ├─ check-presentation.mjs      # 表现层插件：窄屏生效 + 宽屏零影响（15 项）
 │  ├─ check-protocol-parity.mjs   # App/服务端/假手机三方 op 一致性检查
 │  ├─ probe-ws-auth.mjs           # 探测手机 WebSocket 鉴权门（4 种情况）
 │  ├─ restart-live.sh             # 延迟重启线上 dsh 并自动回滚
@@ -89,6 +91,18 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 `shoot.mjs` 会输出并归档：截图、横向溢出、`grid-template-columns`、注入的样式/控件、页面错误。
 选型结论与 390×844 / 1440×900 实测对比见 [ADR-0001](docs/adr/0001-mobile-ui-plugin-selection.md)。
 
+### 表现层验证
+
+```bash
+dsh --profile mobspike --no-open --port 3099
+node tools/check-presentation.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
+  --json docs/verification/presentation.json
+```
+
+15 项：手机端（正文 16px、行高 1.7、禁回弹、透明点击高亮、xc 布局未被破坏、锚点零漂移）
+＋ 桌面端（同一元素在「挂载插件」与「移除插件样式」两种状态下逐项一致）。见
+[ADR-0007](docs/adr/0007-mobile-presentation-layer.md)。
+
 ## 当前状态
 
 | 阶段 | 状态 |
@@ -101,7 +115,8 @@ node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=<printed-token>" \
 | P5 无 root 无障碍自动操作 | **代码完成，待真机联调**：`A11yService`（截图取控件树、点击/滑动/系统键，均在设备端执行）+ 应用 `phone_apps`/`phone_launch`/`phone_ui_tree`/`phone_screenshot`/`phone_tap`/`phone_swipe`/`phone_global`/`phone_a11y_status`，三重开关（App 内开关 + 系统无障碍 + 设备在线） |
 | P7 文件浏览（用户授权文件夹） | **代码完成，待真机验证**：`tree:`（用户在系统选择器里挑的文件夹，授权跨重启保留）+ `downloads:`（`Downloads/DSH`）两个根；工具 `phone_fs_roots/fs_list/fs_read/fs_write/fs_mkdir`，路径形如 `tree:/Documents/report.pdf`，`..` 越界一律拒绝；见 [ADR-0005](docs/adr/0005-browsable-folders.md) |
 | P6 验证/签名/交付 | **完成**：`tools/acceptance.mjs` 56/56（含 16 项 JVM 单测、9 项 op 一致性、5 项线上部署断言）；发布包 `1.0.2` 已签名（`~/.secrets`）；bridge 已装成 systemd 单元、Caddy 已加 `/bridge/*`、线上 profile 已加 `mcp-phone`（**重启 dsh web 后 Agent 侧 `phone_*` 工具生效**）；`dist/DSH-Mobile-1.0.2.apk` 可经 `/bridge/download/` 直接下到手机；DEPLOY/ROLLBACK/DELIVERY/真机清单齐全；iOS 走 PWA 说明 |
-| 待用户参与 | ① 手机浏览器打开上文的 `/bridge/download/DSH-Mobile-1.0.2.apk` 下载并安装；② 按 [真机验收清单](docs/verification/device-checklist.md) 逐项验收（含 P7 文件浏览 10 项）；③ 需要 Agent 读写某个文件夹时，在 App 菜单「选择可浏览的文件夹」里授权 |
+| P9 移动端表现层 | **完成并已生效**：自研插件 `packages/mobile-presentation`（正文 16px/1.7、段落间距、占位文字对比度、禁滚动回弹、透明点击高亮、隐藏滚动条、深色微调）；锚点哈希无关 + 运行时 audit 自检；`tools/check-presentation.mjs` **15/15**（窄屏生效 + 宽屏与关掉插件时逐项一致）；见 [ADR-0007](docs/adr/0007-mobile-presentation-layer.md)。已装进线上 `web` profile 并**于 2026-10-15 23:05 重启生效** |
+| 待用户参与 | ① 手机浏览器打开上文的 `/bridge/download/DSH-Mobile-1.0.2.apk` 下载并安装；② 按 [真机验收清单](docs/verification/device-checklist.md) 逐项验收（含 P7 文件浏览 10 项）；③ 需要 Agent 读写某个文件夹时，在 App 菜单「选择可浏览的文件夹」里授权（P9 表现层已在线上生效，App 端刷新页面即可看到） |
 
 详见 [docs/PLAN.md](docs/PLAN.md)。
 

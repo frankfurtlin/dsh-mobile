@@ -60,6 +60,37 @@ dsh plugin --profile web remove dsh-mobile-xc
 备选方案 `@qingshanyuluo/dsh-client-ui-mobile` 是纯 CSS 的极简回退，其类名哈希会随前端构建漂移；
 若它失效，先执行 `node tools/check-anchors.mjs`（见 ADR-0001）确认命中率再决定是否继续使用。
 
+## 3.1 表现层插件 `dsh-mobile-presentation`（P9）
+
+比 `dsh-mobile-xc` 更容易回滚：它只往页面注入一张样式表，不改布局、不注册服务、不碰网络。
+
+```bash
+dsh plugin --profile web remove dsh-mobile-presentation
+# 重启 dsh web 后，排版/对比度/触感恢复官方默认；xc 的移动布局不受影响
+```
+
+**只停用、不卸载**（想先看看效果差异）：在浏览器/App 里把下面这段贴进控制台即可，
+刷新页面即恢复：
+
+```js
+document.querySelector('style[data-mobile-presentation]')?.remove()
+```
+
+安装前的 profile 快照在 `~/.dsh/profiles/web/package.json.rollback-no-presentation`，
+可直接覆盖回去（严格来说它会连 `dsh-mobile-xc` 一起保留，只是不含本插件）：
+
+```bash
+cp ~/.dsh/profiles/web/package.json.rollback-no-presentation ~/.dsh/profiles/web/package.json
+systemctl restart deepseek-harness.service
+```
+
+若怀疑是**锚点漂移**（DSH 升级后样式只剩一半生效），先确认再决定是否需要重新钉锚点：
+
+```bash
+node tools/check-presentation.mjs --url "http://127.0.0.1:3099/?token=<影子 profile token>"
+# 或浏览器控制台：window.__dshMobilePresentation.audit() → { narrow, anchors, missing }
+```
+
 ## 4. 工具链（可选，约 1.2 GB）
 
 ```bash
