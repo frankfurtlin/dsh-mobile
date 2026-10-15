@@ -277,15 +277,14 @@ if (!existsSync(profilePkg)) {
 } else {
   const pkg = JSON.parse(readFileSync(profilePkg, 'utf8'))
   const bundles = pkg.dsh?.profile?.bundles ?? []
-  check('dsh', 'web profile depends on dsh-mobile-xc', Object.keys(pkg.dependencies ?? {}).includes('dsh-mobile-xc'), JSON.stringify(pkg.dependencies ?? {}))
-  check('dsh', 'web profile bundles enable dsh-mobile-xc', bundles.includes('dsh-mobile-xc'), bundles.join(','))
-  check('dsh', 'web profile depends on dsh-mobile-presentation', Object.keys(pkg.dependencies ?? {}).includes('dsh-mobile-presentation'), JSON.stringify(pkg.dependencies ?? {}))
-  check('dsh', 'web profile bundles enable dsh-mobile-presentation', bundles.includes('dsh-mobile-presentation'), bundles.join(','))
+  check('dsh', 'web profile depends on dsh-mobile-ux (merged xc+presentation)', Object.keys(pkg.dependencies ?? {}).includes('dsh-mobile-ux'), JSON.stringify(pkg.dependencies ?? {}))
+  check('dsh', 'web profile bundles enable dsh-mobile-ux', bundles.includes('dsh-mobile-ux'), bundles.join(','))
+  check('dsh', 'upstream dsh-mobile-xc no longer mounted (vendored into dsh-mobile-ux)', !bundles.includes('dsh-mobile-xc'), bundles.join(','))
 }
 
 // The presentation plugin's client half is inlined from styles/mobile.css, so a
 // stale artifact would ship the previous stylesheet without any other symptom.
-const presentationBuild = run(process.execPath, [join(ROOT, 'packages/mobile-presentation/scripts/build.mjs'), '--check'])
+const presentationBuild = run(process.execPath, [join(ROOT, 'plugins/mobile-ux/scripts/build.mjs'), '--check'])
 check('dsh', 'presentation client.js is in sync with styles/mobile.css', presentationBuild.status === 0, (presentationBuild.stderr || presentationBuild.stdout).trim().split('\n')[0])
 
 for (const artifact of ['dsh-mobile-bridge.service', 'caddy-dsh-mobile.snippet', 'dsh-profile-mcp-phone.yml']) {
@@ -357,7 +356,8 @@ for (const doc of [
   'docs/adr/0005-browsable-folders.md',
   'docs/adr/0006-artifact-download-route.md',
   'docs/adr/0007-mobile-presentation-layer.md',
-  'packages/mobile-presentation/README.md',
+  'plugins/mobile-ux/README.md',
+  'plugins/mobile-ux/vendor/dsh-mobile-xc/LICENSE',
   'docs/verification/presentation.json',
 ]) {
   check('docs', `${doc} present`, existsSync(join(ROOT, doc)))

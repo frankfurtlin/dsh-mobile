@@ -1,8 +1,0 @@
-# dsh-mobile-presentation bundle patch.
-#
-# `dsh plugin --profile <p> add <pkg>` mounts this entry automatically because
-# package.json declares dsh.bundle.patch. Keep insert[].id equal to the package
-# name: DSH derives the plugin's identity from this id.
-- insert:
-    - id: dsh-mobile-presentation
-      name: dsh-mobile-presentation

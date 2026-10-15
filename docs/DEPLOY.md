@@ -12,7 +12,7 @@
 | bridge 服务 | **已装并运行** | `systemctl is-active dsh-mobile-bridge` → active；`curl -s http://127.0.0.1:3082/healthz` → `{"ok":true,...,"phones":0}` |
 | Caddy 路由 | **已加** | `/etc/caddy/Caddyfile` 含 `handle /bridge/*`；`caddy validate` 通过；Caddy 已重启加载（本机 Caddyfile 带 `admin off`，`caddy reload` 不可用） |
 | 线上 profile MCP 接入 | **已生效（无需重启）** | `~/.dsh/profiles/web/cordis.patch.yml` 含 `mcp-phone`（serverName `phone` → `http://127.0.0.1:3082/mcp`）；本会话里 `phone_list`/`phone_ping` 已可用；回滚副本 `cordis.patch.yml.rollback-no-mcp-phone` |
-| 移动端 UI 插件 | **已生效** | `package.json` 的 `dsh.profile.bundles` 含 `dsh-mobile-xc`；23:18 重启成功（见 `docs/verification/last-restart.log`） |
+| 移动端 UX 插件 | **已生效** | 2026-10-16 04:20 重启成功（pid 925820）：`dsh-mobile-xc` + `dsh-mobile-presentation` 已合并为自研 `dsh-mobile-ux`（xc 0.6.7 MIT vendor），profile bundles 只含 `dsh-mobile-ux`；见 `docs/verification/last-restart.log` |
 | 手机 WSS 鉴权门（公网实测） | **4/4 符合预期** | `node tools/probe-ws-auth.mjs` → 无 Origin 403 / 无 cookie 401 / 假 cookie 401 / 错 Origin 403 |
 | 构件下载口 | **已生效** | `https://dsh.example.com/bridge/download/DSH-Mobile-1.0.7.apk` → 无 cookie `401`；`dist/` 里的 APK 与 release 构建 sha256 一致 |
 | dsh web 重启 | **已完成（23:18，无需再做）** | `docs/verification/last-restart.log` → `RESULT: SUCCESS`，之后又跑过一次 `MODE=check` 校验 |

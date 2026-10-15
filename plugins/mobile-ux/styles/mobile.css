@@ -1,0 +1,171 @@
+/*
+ * dsh-mobile-ux — 移动端表现层（观感半）。
+ *
+ * 本插件由两部分组成：骨架（vendor 的 dsh-mobile-xc 0.6.7，见 vendor/）负责
+ * 抽屉、内容列占满、安全区、PWA；本文件是观感半——正文排版、留白、对比度、
+ * 触感。同插件内分工：骨架管布局属性，本文件不碰 grid/position/width/height。
+ *
+ * 三条硬约束（与 0001 / 0007 ADR 一致）：
+ *   1. 所有规则必须落在 @media (max-width: 1023px) 内 —— 桌面端零影响。
+ *   2. 锚点必须哈希无关：优先用语义类名片段（[class*="markdown"]）、元素选择器
+ *      与 DSH 设计 token；**不要**写 `pI_x6G_frame` 这类带构建哈希的完整类名。
+ *      运行时自检：window.__dshMobileUx.presentation.audit()。
+ *   3. 颜色、字号、动效一律走 DSH 的 token，不写死值 —— 深浅色由 token 自己翻转。
+ *      DSH 的深色态是 `body[data-ds-dark-theme]`（由设置里的 深色/跟随系统 驱动），
+ *      **不是** `prefers-color-scheme`；早先按后者写的那份深色覆盖会在
+ *      「系统深色 + DSH 选浅色」时把正文刷成近白压白底，现已删除。
+ *
+ * 注意：顶部安全区也不要加：原生壳已经把 WebView 排在状态栏下面了
+ * （MainActivity 用 WindowInsets 给 toolbar 留位），这里再加就是双份留白。
+ */
+
+@media (max-width: 1023px) {
+  /* ==========================================================
+   * 1. 原生触感：消除 WebView 的“网页味”
+   * ========================================================== */
+
+  html,
+  body {
+    /* 滚动到边界时的橡皮筋回弹是浏览器特征，原生列表不会这样 */
+    overscroll-behavior: none;
+    /* 禁止系统按视口宽度擅自放大字号（横屏/大屏手机下字会突然变大） */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  *,
+  *::before,
+  *::after {
+    /* 点击瞬间的灰色/蓝色方块是浏览器的高亮反馈 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 触屏没有常驻滚动条的必要，隐掉以免挤压内容宽度 */
+  ::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /*
+   * 高亮抹掉之后必须自己补按下反馈，否则触屏上是“点了没反应”。
+   * 用 opacity 而不是背景色：DSH primitives 自己会改 hover/active 底色，叠上去会脏。
+   * 这两条都只有元素级特异性（0,0,1），primitives 的类选择器一旦自己定义了
+   * transition 或 active 态，这里的规则自然让位，不会打架。
+   *
+   * 两个 token 已在 0.2.1-alpha.2 的 dsh-client-ui-theme 包里核实存在：
+   *   --ds-transition-duration-fast: .1s
+   *   --ds-ease-in-out: cubic-bezier(.4, 0, .2, 1)
+   * 兜底值与官方定义完全一致，token 缺失时观感不变。
+   */
+  button,
+  a,
+  [role='button'],
+  summary {
+    transition: opacity var(--ds-transition-duration-fast, 0.1s)
+      var(--ds-ease-in-out, cubic-bezier(0.4, 0, 0.2, 1));
+  }
+
+  button:not(:disabled):active,
+  a:active,
+  [role='button']:active,
+  summary:active {
+    opacity: 0.72;
+  }
+
+  /* ==========================================================
+   * 2. 正文排版
+   *
+   * 锚点 `[class*="markdown"]`：DSH 渲染 markdown 的容器语义名
+   * （实测为 `_markdown_1ypvv_5`，前缀是语义词、后缀才是构建哈希），
+   * 因此哈希漂移不影响命中。这里只调元素（p/li/h/pre/code），不碰容器。
+   * ========================================================== */
+
+  /*
+   * 正文官方阶梯（0.2.1-alpha.2）：--dsw-font-markdown-base 直接读
+   * 「内容字号」（--dsh-content-font-size，10–22，默认 14）。14px 在手机上偏小，
+   * 收一个 16px 的下限；不再写死上限，设置调大时照常生效。
+   *
+   * 基准算在容器上，标题按官方自己的偏移整体抬：官方阶梯是
+   *   h1 = 21px + 增量, h2 = 19px + 增量, h3 = 18px + 增量, h4 = 正文字号 + 加粗
+   * 相对正文分别是 +7 / +5 / +4 / 0。这里沿用同一组偏移（而不是自造倍数），
+   * 只把基准从 14 抬到 ≥16 —— 层级关系与官方设计完全一致。
+   */
+  [class*='markdown'] {
+    --dsh-mobile-prose: max(16px, var(--dsh-content-font-size, 14px));
+  }
+
+  [class*='markdown'] p,
+  [class*='markdown'] li {
+    font-size: var(--dsh-mobile-prose) !important;
+    line-height: 1.7 !important;
+    letter-spacing: 0.01em;
+  }
+
+  /* 段落之间给足呼吸，否则多段正文挤成一坨 */
+  [class*='markdown'] p + p,
+  [class*='markdown'] li + li {
+    margin-top: 0.8em !important;
+  }
+
+  [class*='markdown'] h1 {
+    font-size: calc(var(--dsh-mobile-prose) + 7px) !important;
+    line-height: 1.4 !important;
+  }
+  [class*='markdown'] h2 {
+    font-size: calc(var(--dsh-mobile-prose) + 5px) !important;
+    line-height: 1.45 !important;
+  }
+  [class*='markdown'] h3 {
+    font-size: calc(var(--dsh-mobile-prose) + 4px) !important;
+    line-height: 1.5 !important;
+  }
+  [class*='markdown'] h4 {
+    font-size: var(--dsh-mobile-prose) !important;
+    line-height: 1.5 !important;
+  }
+
+  /*
+   * 代码官方阶梯：行内 = calc(12px + 代码字号增量)，默认 12px；代码块直接用
+   * 「代码字号」本身（--dsh-code-font-size，10–16，默认 11px）。手机上 11–12px
+   * 太小，统一抬到 13px 下限，之上仍跟随设置。
+   * 作用域照抄官方（MarkdownText.module.css 用 `:not(pre) > code` 区分行内与
+   * 块内）；另按官方 `.markdown :where(h1..h6) code { font: inherit }` 恢复标题内
+   * 代码继承标题字号，否则上面那条 !important 会把标题里的代码压到 13px。
+   */
+  [class*='markdown'] code,
+  [class*='markdown'] pre {
+    font-size: max(13px, var(--dsh-code-font-size, 11px)) !important;
+  }
+  [class*='markdown'] pre {
+    line-height: 1.6 !important;
+  }
+  [class*='markdown'] :is(h1, h2, h3, h4, h5, h6) code {
+    font-size: inherit !important;
+  }
+
+  /* ==========================================================
+   * 3. 留白
+   * ========================================================== */
+
+  /* 输入区与底部手势条之间留出安全距离（xc 之外的一层保险） */
+  [class*='_composerStack'] {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* ==========================================================
+   * 4. 对比度
+   *
+   * 输入框占位文字实测 rgb(173,178,184)，即官方的 --dsw-alias-label-caption
+   * （浅色 = neutral-bluish-400），白底约 2.1:1，低于 WCAG AA 正文要求的 4.5:1，
+   * 室外/低亮度屏上几乎看不见。改用 --dsw-alias-label-tertiary
+   * （浅色 = neutral-bluish-600 #81858c，约 3.7:1；深色 = neutral-bluish-400），
+   * 深浅色随主题自动翻转 —— 不再需要单独一份深色覆盖，也就不会出现
+   * 「系统深色 + DSH 选浅色」那种错色。
+   *
+   * 停在 tertiary 而不是更深的 secondary：secondary（#61666b，白底 5.8:1）再深
+   * 就与用户真正输入的字分不出来了，这是可读性与语义的折中。
+   * ========================================================== */
+
+  [class*='_placeholder'] {
+    color: var(--dsw-alias-label-tertiary, #81858c) !important;
+  }
+}

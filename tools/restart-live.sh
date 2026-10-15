@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Activate (or roll back) the dsh-mobile-xc mobile UI plugin on the live DSH.
+# Activate (or roll back) the dsh-mobile-ux mobile UI plugin on the live DSH.
 #
 # Why a separate script: restarting deepseek-harness.service kills every process
 # in that service's control group — including the agent turn that asked for the
@@ -13,7 +13,7 @@
 #   1. restart the service, wait until 3080 (dsh web) and 3081 (dsh-passwords
 #      gateway, spawned inside the same cgroup) answer again;
 #   2. if dsh web does not come back within WAIT seconds, restore the profile's
-#      package.json without dsh-mobile-xc AND cordis.patch.yml without the
+#      package.json without dsh-mobile-ux AND cordis.patch.yml without the
 #      mcp-phone entry, then restart again, so the user is never left with a
 #      dead DSH;
 #   3. report the phone bridge unit, its /healthz and a live MCP initialize
@@ -29,7 +29,7 @@ PROFILE="${DSH_PROFILE_DIR:-${HOME}/.dsh/profiles/web}"
 PKG="$PROFILE/package.json"
 # Pre-change snapshot restored when the restart fails. Rollback files are named
 # after what they *remove*, so prefer the most recent, most specific one: a
-# mobile-presentation failure should not also tear down the xc mobile layout.
+# a dsh-mobile-ux failure should not also tear down the phone MCP entry.
 # Override with ROLLBACK_PKG=<path>.
 ROLLBACK="${ROLLBACK_PKG:-}"
 PATCH="$PROFILE/cordis.patch.yml"
@@ -40,7 +40,7 @@ MODE="${MODE:-restart}"
 WAIT="${WAIT:-90}"
 
 if [ -z "$ROLLBACK" ]; then
-  for candidate in "$PROFILE/package.json.rollback-no-presentation" "$PROFILE/package.json.rollback-no-mobile-xc"; do
+  for candidate in "$PROFILE/package.json.rollback-no-mobile-ux" "$PROFILE/package.json.rollback-no-presentation" "$PROFILE/package.json.rollback-no-mobile-xc"; do
     if [ -f "$candidate" ]; then ROLLBACK="$candidate"; break; fi
   done
 fi
@@ -99,11 +99,11 @@ log "systemctl restart $UNIT -> rc=$?"
 
 if wait_up; then
   summarize
-  log "RESULT: SUCCESS — dsh-mobile-xc is active. Refresh the browser (Ctrl/Cmd+Shift+R) to get the mobile layout."
+  log "RESULT: SUCCESS — dsh-mobile-ux is active. Refresh the browser (Ctrl/Cmd+Shift+R) to get the mobile layout."
   exit 0
 fi
 
-log "RESULT: FAILED — rolling back dsh-mobile-xc and the mcp-phone MCP entry"
+log "RESULT: FAILED — rolling back dsh-mobile-ux and the mcp-phone MCP entry"
 ROLLED_BACK=0
 if [ -f "$ROLLBACK" ]; then
   cp -v "$ROLLBACK" "$PKG"

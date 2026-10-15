@@ -50,37 +50,29 @@ DSH profile：从 `cordis.patch.yml` 删除 `mcp-phone` 的 `insert` 段（或�
 
 > 移除 MCP 接入不会影响 DSH 原有功能：bridge 是独立进程，且只通过 `127.0.0.1:3082` 暴露。
 
-## 3. Web UI 移动端适配插件（P1）
+## 3. 移动端 UX 插件 `dsh-mobile-ux`（P1 + P9 合并）
+
+原 `dsh-mobile-xc`（骨架）与 `dsh-mobile-presentation`（观感）已合并为自研插件
+`dsh-mobile-ux`（xc 0.6.7 MIT vendor 于 `plugins/mobile-ux/vendor/`）。整体移除即同时
+回退移动布局与排版观感：
 
 ```bash
-dsh plugin --profile web remove dsh-mobile-xc
-# 重启 dsh web 后，移动端恢复官方布局（内容列 334px 的窄布局）
+dsh plugin --profile web remove dsh-mobile-ux
+# 重启 dsh web 后，移动端恢复官方布局（内容列 334px 的窄布局）与官方排版
 ```
 
-备选方案 `@qingshanyuluo/dsh-client-ui-mobile` 是纯 CSS 的极简回退，其类名哈希会随前端构建漂移；
-若它失效，先执行 `node tools/check-anchors.mjs`（见 ADR-0001）确认命中率再决定是否继续使用。
-
-## 3.1 表现层插件 `dsh-mobile-presentation`（P9）
-
-比 `dsh-mobile-xc` 更容易回滚：它只往页面注入一张样式表，不改布局、不注册服务、不碰网络。
-
-```bash
-dsh plugin --profile web remove dsh-mobile-presentation
-# 重启 dsh web 后，排版/对比度/触感恢复官方默认；xc 的移动布局不受影响
-```
-
-**只停用、不卸载**（想先看看效果差异）：在浏览器/App 里把下面这段贴进控制台即可，
+**只停用观感半、保留骨架**（想先看看排版差异）：在浏览器/App 里把下面这段贴进控制台即可，
 刷新页面即恢复：
 
 ```js
-document.querySelector('style[data-mobile-presentation]')?.remove()
+document.querySelector('style[data-mobile-ux]')?.remove()
 ```
 
-安装前的 profile 快照在 `~/.dsh/profiles/web/package.json.rollback-no-presentation`，
-可直接覆盖回去（严格来说它会连 `dsh-mobile-xc` 一起保留，只是不含本插件）：
+安装前的 profile 快照在 `~/.dsh/profiles/web/package.json.rollback-no-mobile-ux`，
+可直接覆盖回去：
 
 ```bash
-cp ~/.dsh/profiles/web/package.json.rollback-no-presentation ~/.dsh/profiles/web/package.json
+cp ~/.dsh/profiles/web/package.json.rollback-no-mobile-ux ~/.dsh/profiles/web/package.json
 systemctl restart deepseek-harness.service
 ```
 
@@ -88,7 +80,7 @@ systemctl restart deepseek-harness.service
 
 ```bash
 node tools/check-presentation.mjs --url "http://127.0.0.1:3099/?token=<影子 profile token>"
-# 或浏览器控制台：window.__dshMobilePresentation.audit() → { narrow, anchors, missing }
+# 或浏览器控制台：window.__dshMobileUx.presentation.audit() → { narrow, anchors, missing }
 ```
 
 ## 4. 工具链（可选，约 1.2 GB）

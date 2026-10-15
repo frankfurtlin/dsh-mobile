@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T14:50:22.736Z",
+  "generatedAt": "2026-10-15T20:17:10.685Z",
   "url": "http://127.0.0.1:3099/?token=<redacted>",
   "mobile": {
     "styleInjected": true,
@@ -7,12 +7,12 @@
     "proseFont": "16px",
     "proseLineHeight": "27.2px",
     "proseColor": "rgb(15, 17, 21)",
-    "placeholderColor": "rgb(139, 146, 156)",
+    "placeholderColor": "rgb(129, 133, 140)",
     "overscroll": "none",
     "tapHighlight": "rgba(0, 0, 0, 0)",
     "audit": {
       "narrow": true,
-      "anchors": 4,
+      "anchors": 3,
       "missing": []
     }
   },
@@ -27,7 +27,7 @@
     "tapHighlight": "rgba(0, 0, 0, 0.18)",
     "audit": {
       "narrow": false,
-      "anchors": 4,
+      "anchors": 3,
       "missing": []
     }
   },

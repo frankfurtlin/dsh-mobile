@@ -1,0 +1,9 @@
+# dsh-mobile-ux bundle patch.
+#
+# `dsh plugin --profile <p> add <pkg>` mounts this entry automatically because
+# package.json declares dsh.bundle.patch. Keep insert[].id equal to the package
+# name: DSH derives the plugin's identity from this id, and the client half
+# queries the settings namespace by the same id (configForms.get('dsh-mobile-ux')).
+- insert:
+    - id: dsh-mobile-ux
+      name: dsh-mobile-ux

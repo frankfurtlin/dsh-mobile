@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Runtime verification for `dsh-mobile-presentation`.
+ * Runtime verification for `dsh-mobile-ux` (the merged skeleton+presentation
+ * plugin; formerly dsh-mobile-xc + dsh-mobile-presentation).
  *
  * Two things must hold, and neither can be proven by reading the stylesheet:
  *   1. the mobile rules actually land on the real DSH DOM at phone width;
@@ -15,7 +16,8 @@
  *   node tools/check-presentation.mjs --url ... --json docs/verification/presentation.json
  *
  * Exit code is non-zero when any check fails. Requires a shadow profile that has
- * the plugin mounted (and dsh-mobile-xc, which owns the mobile layout).
+ * the plugin mounted (the vendored dsh-mobile-xc skeleton, which owns the
+ * mobile layout).
  */
 
 import { writeFileSync } from 'node:fs'
@@ -71,6 +73,22 @@ async function openConversation(page, narrow) {
   if (await entry.count()) {
     await entry.click({ timeout: 5000 }).catch(() => {})
     await page.waitForTimeout(3000)
+  } else {
+    // DSH 0.2.1+ 的侧栏把会话与工作区平铺进同一棵树（role="treeitem"），不再有
+    // 平铺的会话标题链接。会话条目有两个可判别特征：不带行内按钮（工作区行自带
+    // aria-label "New session in …" 的新建按钮），文本也不是 "New Session" 占位。
+    // 点树里第一条这样的条目即可打开最近会话 —— role 是语义属性，哈希无关。
+    const opened = await page.evaluate(() => {
+      const row = [...document.querySelectorAll('[role="treeitem"]')].find((el) => {
+        const text = (el.textContent ?? '').trim()
+        return text && text !== 'New Session' && !el.querySelector('button[aria-label^="New session in"]')
+      })
+      if (!row) return null
+      row.click()
+      return (row.textContent ?? '').trim().slice(0, 40)
+    })
+    console.log(`openConversation: ${opened ? `opened session "${opened}"` : 'no session entry found in sidebar tree'}`)
+    await page.waitForTimeout(3000)
   }
   await page.evaluate(() => {
     const frame = document.querySelector('[data-mobile-nav="frame"]')
@@ -88,7 +106,7 @@ const MEASURE = () => {
   const prose = [...document.querySelectorAll('[class*="markdown"] p')].find((el) => (el.textContent ?? '').trim().length > 25)
   const placeholder = document.querySelector("[class*='_placeholder']")
   return {
-    styleInjected: document.querySelector('style[data-mobile-presentation]') !== null,
+    styleInjected: document.querySelector('style[data-mobile-ux]') !== null,
     grid: frame ? getComputedStyle(frame).gridTemplateColumns : null,
     proseFont: prose ? getComputedStyle(prose).fontSize : null,
     proseLineHeight: prose ? getComputedStyle(prose).lineHeight : null,
@@ -96,7 +114,7 @@ const MEASURE = () => {
     placeholderColor: placeholder ? getComputedStyle(placeholder).color : null,
     overscroll: getComputedStyle(document.documentElement).overscrollBehaviorY,
     tapHighlight: getComputedStyle(document.body).webkitTapHighlightColor,
-    audit: window.__dshMobilePresentation ? window.__dshMobilePresentation.audit() : null,
+    audit: window.__dshMobileUx?.presentation ? window.__dshMobileUx.presentation.audit() : null,
   }
 }
 
@@ -121,7 +139,7 @@ try {
   desktop = await wide.evaluate(MEASURE)
   // Same element, plugin stylesheet removed: any difference is desktop impact.
   const withoutPlugin = await wide.evaluate(() => {
-    document.querySelector('style[data-mobile-presentation]').remove()
+    document.querySelector('style[data-mobile-ux]').remove()
     const frame = [...document.querySelectorAll('[class*="_frame"]')].find((el) => getComputedStyle(el).display.includes('grid'))
     const prose = [...document.querySelectorAll('[class*="markdown"] p')].find((el) => (el.textContent ?? '').trim().length > 25)
     const placeholder = document.querySelector("[class*='_placeholder']")

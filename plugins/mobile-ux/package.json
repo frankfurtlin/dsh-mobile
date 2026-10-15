@@ -1,8 +1,8 @@
 {
-  "name": "dsh-mobile-presentation",
-  "version": "0.1.0",
+  "name": "dsh-mobile-ux",
+  "version": "0.2.0",
   "private": true,
-  "description": "DSH 移动端表现层：正文排版、留白、对比度、原生触感与深色微调。<=1023px 生效，桌面零影响。",
+  "description": "DSH 移动端 UX 层（骨架 + 观感合一）：overlay 抽屉/安全区/PWA/canary 防失效 + 正文排版/对比度/原生触感。<=1023px 生效，桌面零影响。",
   "type": "module",
   "license": "MIT",
   "main": "index.js",
@@ -20,6 +20,10 @@
       "patch": "./cordis.patch.yml"
     },
     "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
       "platform": "web"
     }
   },
@@ -27,6 +31,7 @@
     "index.js",
     "client.js",
     "styles",
+    "vendor",
     "cordis.patch.yml",
     "README.md"
   ],

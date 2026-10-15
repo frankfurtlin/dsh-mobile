@@ -59,7 +59,7 @@
 | **P7 文件浏览（用户授权文件夹）** | 两个根：`tree:`（`ACTION_OPEN_DOCUMENT_TREE` 让用户亲手挑文件夹 + `takePersistableUriPermission` 持久授权）与 `downloads:`（MediaStore `Downloads/DSH`）；`FileBrowser` 统一 `根:/相对路径` 寻址、`..` 越界拒绝；App 菜单可查看/清除授权；工具 `phone_fs_roots/fs_list/fs_read/fs_write/fs_mkdir` | Agent 能列目录、读真实文件、写回结果；越界与绝对路径被拒；不申请 `MANAGE_EXTERNAL_STORAGE` | 1–2d | ✅ 代码完成：App 侧 `FileBrowser`（6 项 JVM 单测）+ bridge 5 个工具 + 91/91 自测 + 9/9 一致性（ADR-0005），**待真机验证** |
 | **P6 验证与交付** | 自动化验收脚本 + 真机清单、release 签名（keystore 存 `~/.secrets`）、PWA/iOS 说明、一键构建与回滚文档 | 全部验收项通过，第三方可照文档装起来 | 1d | ✅ 完成：`tools/acceptance.mjs` **80/80**（含 24 项 JVM 单测、9 项 op 一致性、5 项线上部署断言）；`tools/gen-keystore.sh` + `--release` 签名包 `1.0.2`（apksigner 校验通过）；`docs/DEPLOY.md`、`docs/ROLLBACK.md`、`docs/DELIVERY.md`、`docs/verification/device-checklist.md`；`tools/check-anchors.mjs` 漂移检测（xc 28/33=85%）；线上 dsh web 已于 2026-10-14 23:18 重启（`phone_*` 工具与移动布局均已生效，见 `docs/verification/last-restart.log`）；`dist/` 里的签名包可由 bridge 的 `/bridge/download/` 直接下到手机；**剩余动作**：真机逐项验收 |
 
-| **P9 移动端表现层** | 自研 DSH 插件 `packages/mobile-presentation`：正文排版（16px/1.7 + 段落间距 + 标题/代码层级）、占位文字对比度、原生触感（禁滚动回弹、透明点击高亮、隐藏滚动条）、深色微调；要求锚点哈希无关、桌面零影响 | 影子 profile 上手机端生效、桌面端与关掉插件时逐项一致；DSH 升级后锚点漂移可被检出 | 0.5d | ✅ 完成：`tools/check-presentation.mjs` **15/15**；已装进线上 `web` profile（`bundles` 含 `dsh-mobile-presentation`）并**于 2026-10-15 23:05 重启生效**；见 [ADR-0007](../adr/0007-mobile-presentation-layer.md) |
+| **P9 移动端 UX 插件** | 自研 DSH 插件 `plugins/mobile-ux`（2026-10-16 起：原 `dsh-mobile-xc` 0.6.7 MIT vendor 收编 + 原 `dsh-mobile-presentation` 合并，单插件单 bundle）：骨架（抽屉/安全区/PWA/设置面板，来自 xc）+ 观感（正文排版 16px 下限/官方标题阶梯、代码 13px 下限、占位文字对比度、原生触感）；锚点哈希无关、桌面零影响 | 影子 profile 上手机端生效、桌面端与关掉插件时逐项一致；DSH 升级后锚点漂移可被检出 | 0.5d | ✅ 完成：`tools/check-presentation.mjs` **15/15**（合并后复验通过）；线上 `web` profile 已切到 `dsh-mobile-ux`（待重启生效）；见 [ADR-0007](../adr/0007-mobile-presentation-layer.md) |
 
 总计约 **11–15 个工作日**。P2 结束即可日常使用；P3/P4/P5 为增强。
 
@@ -109,5 +109,5 @@
 | WebView 与浏览器在下载/文件选择/剪贴板行为上不同 | P3 全部走原生拦截，不依赖 Web 默认行为 |
 | 无障碍权限被厂商 ROM 限制（后台被杀、权限收紧） | P5 提供前台常驻通知 + 引导页；失败时明确降级提示 |
 | 首次 Gradle 构建需下载 Gradle 8.14.3 与依赖（数百 MB） | 本机网络可达；构建缓存在 `~/.gradle` |
-| 自研表现层插件锚在语义类名片段上，DSH 若重命名语义段（如 `_markdown_*` → 别的名字）会静默失效 | `tools/check-presentation.mjs` 断言「锚点零漂移」，且插件自带 `window.__dshMobilePresentation.audit()`；失配会被检出而非静默 |
+| 自研表现层插件锚在语义类名片段上，DSH 若重命名语义段（如 `_markdown_*` → 别的名字）会静默失效 | `tools/check-presentation.mjs` 断言「锚点零漂移」，且插件自带 `window.__dshMobileUx.presentation.audit()`；失配会被检出而非静默 |
 | **App 侧深色主题拿不到**：DSH 前端只认 `prefers-color-scheme`，而 App 的 `application` 主题锁死 `Theme.AppCompat.Light.DarkActionBar`，且无切换入口 —— 手机系统非深色时用户永远只能看白底 | 待做（原生侧小改）：application 主题换 DayNight + 菜单加「跟随系统/强制深色」开关，切换时 `recreate()` 让 WebView 重取 `prefers-color-scheme` |
