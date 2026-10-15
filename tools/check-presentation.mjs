@@ -19,11 +19,7 @@
  */
 
 import { writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-
-const require = createRequire(import.meta.url)
-const PLAYWRIGHT = process.env.PLAYWRIGHT_PATH
-  ?? '~/deepseek-harness/node_modules/.pnpm/playwright@1.63.0-alpha-2026-08-31/node_modules/playwright'
+import { resolvePlaywright } from './lib/playwright.mjs'
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`)
@@ -37,11 +33,17 @@ if (!url) {
   process.exit(2)
 }
 
+/**
+ * The profile URL carries a live `?token=` credential. Never write it to the
+ * report: the report is committed as evidence.
+ */
+const redact = (value) => value.replace(/([?&]token=)[^&\s]*/gi, '$1<redacted>')
+
 let chromium
 try {
-  ;({ chromium } = require(PLAYWRIGHT))
+  ;({ chromium } = resolvePlaywright())
 } catch (error) {
-  console.error(`cannot load playwright (${PLAYWRIGHT}): ${error.message}`)
+  console.error(`cannot load playwright: ${error.message}`)
   process.exit(3)
 }
 
@@ -159,7 +161,7 @@ try {
 
 const failed = results.filter((r) => !r.ok)
 if (jsonOut) {
-  writeFileSync(jsonOut, `${JSON.stringify({ generatedAt: new Date().toISOString(), url, mobile, desktop, results }, null, 2)}\n`)
+  writeFileSync(jsonOut, `${JSON.stringify({ generatedAt: new Date().toISOString(), url: redact(url), mobile, desktop, results }, null, 2)}\n`)
   console.log(`\nwrote ${jsonOut}`)
 }
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`)

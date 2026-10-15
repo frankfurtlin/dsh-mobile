@@ -18,10 +18,15 @@
  */
 
 import { readFileSync, readdirSync, statSync, existsSync, writeFileSync } from 'node:fs'
-import { join, basename, resolve } from 'node:path'
+import { homedir } from 'node:os'
+import { dirname, join, basename, resolve } from 'node:path'
 
-const DSH_INSTALL = process.env.DSH_INSTALL ?? '~/.nvm/versions/node/v24.21.0/lib/node_modules/@deepseek-ai/dsh'
-const DEFAULT_PLUGIN_ROOT = process.env.DSH_WEB_PROFILE_MODULES ?? '~/.dsh/profiles/web/node_modules'
+// `dsh` is a global install, so its package sits next to the running node binary
+// (`<prefix>/bin/node` -> `<prefix>/lib/node_modules`). DSH_INSTALL overrides.
+const DSH_INSTALL = process.env.DSH_INSTALL
+  ?? join(dirname(process.execPath), '..', 'lib/node_modules/@deepseek-ai/dsh')
+const DEFAULT_PLUGIN_ROOT = process.env.DSH_WEB_PROFILE_MODULES
+  ?? join(homedir(), '.dsh/profiles/web/node_modules')
 
 /**
  * Parse `--flag value` / `--flag=value` / booleans.

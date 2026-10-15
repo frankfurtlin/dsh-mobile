@@ -26,3 +26,13 @@ android/app/src/main/assets/capacitor.plugins.json
 .env.*
 !.env.example
 *.jks
+
+# 本地验收留痕：截图与逐次运行报告不入库（体积大且含本机路径/会话画面）
+# 保留 device-checklist.md、protocol-parity.json、presentation.json 作为可核对证据。
+docs/verification/*.png
+docs/verification/acceptance-*.json
+docs/verification/live-profile/
+docs/verification/spike-xc/
+docs/verification/last-restart.log
+docs/verification/Caddyfile.before-bridge
+docs/verification/ws-auth.json

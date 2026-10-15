@@ -8,6 +8,17 @@
 - 额外提供 Web 端没有的手机能力：浏览/上传手机文件、用手机 App 打开文件、系统分享进 DSH，
   以及让 Agent 通过工具读写手机文件；并支持**无 root 的无障碍自动操作**（截图、控件树、点击/滑动、启动应用）。
 
+## 文档约定
+
+仓库里的部署配置与文档全部与具体机器无关，看到这些占位符请替换成你自己的：
+
+| 占位符 | 含义 |
+|---|---|
+| `dsh.example.com` | 你对外提供 DSH Web UI 的域名（手机连的就是它） |
+| `~` | 运行 dsh 的那个用户的 home，通常就是你的登录用户 |
+| `@DOMAIN@` / `@INSTALL_DIR@` / `@NODE_BIN@` | `deploy/` 里的模板占位符，见文件头部注释 |
+| `top.frankfurtlin.dshmobile` | Android 的 `applicationId`，是 App 的身份而非配置，一般不改 |
+
 ## 目录结构
 
 ```
@@ -134,7 +145,7 @@ https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk
 **手边能连 USB 时**：
 
 ```bash
-cd ~/workspace/dsh-mobile
+cd ~/dsh-mobile
 tools/build-apk.sh --release             # 或 tools/build-apk.sh 出调试包
 adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk
 ```

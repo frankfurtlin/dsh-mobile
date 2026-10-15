@@ -1,3 +1,18 @@
+# dsh-mobile bridge — systemd unit TEMPLATE.
+#
+# This file is not installable as-is: substitute the @…@ placeholders first.
+#
+#   sed -e 's|@INSTALL_DIR@|/opt/dsh-mobile|g'          \
+#       -e 's|@DOMAIN@|dsh.example.com|g'               \
+#       -e "s|@NODE_BIN@|$(command -v node)|g"          \
+#       deploy/dsh-mobile-bridge.service                  \
+#       > /etc/systemd/system/dsh-mobile-bridge.service
+#
+#   systemctl daemon-reload && systemctl enable --now dsh-mobile-bridge
+#
+# systemd does not expand environment variables inside WorkingDirectory or
+# ExecStart, which is why these are literal placeholders rather than variables.
+
 [Unit]
 Description=DSH Mobile bridge (MCP endpoint + phone WebSocket)
 After=network-online.target
@@ -5,14 +20,18 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# Runs as the same user that owns the checkout; drop privileges if you like.
 User=root
-WorkingDirectory=~/workspace/dsh-mobile/packages/bridge-server
-Environment=DSH_BRIDGE_PUBLIC_ORIGIN=https://dsh.example.com
+WorkingDirectory=@INSTALL_DIR@/packages/bridge-server
+# Public origin the phone connects to. Must match the Caddy site and the
+# Origin header the WebView sends, or the bridge rejects the handshake.
+Environment=DSH_BRIDGE_PUBLIC_ORIGIN=https://@DOMAIN@
+# The dsh-passwords gateway the bridge verifies session cookies against.
 Environment=DSH_BRIDGE_GATEWAY=http://127.0.0.1:3081
 # Build artifacts a logged-in browser may fetch at /bridge/download/<file>.
-Environment=DSH_BRIDGE_DOWNLOAD_DIR=~/workspace/dsh-mobile/dist
+Environment=DSH_BRIDGE_DOWNLOAD_DIR=@INSTALL_DIR@/dist
 Environment=DSH_BRIDGE_DOWNLOAD_PATH=/bridge/download
-ExecStart=~/.nvm/versions/node/v24.21.0/bin/node src/index.js
+ExecStart=@NODE_BIN@ src/index.js
 Restart=always
 RestartSec=2
 

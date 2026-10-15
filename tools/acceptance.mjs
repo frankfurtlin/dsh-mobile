@@ -18,16 +18,31 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ANDROID_DIR = join(ROOT, 'packages/mobile-shell/android')
 const BRIDGE_DIR = join(ROOT, 'packages/bridge-server')
-const ANDROID_HOME = process.env.ANDROID_HOME ?? '~/.local/android'
+// Toolchain and DSH state default under $HOME so the harness works for any user
+// (see docs/DEPLOY.md). Override with ANDROID_HOME / JAVA_HOME / DSH_PROFILE_DIR.
+const ANDROID_HOME = process.env.ANDROID_HOME ?? join(homedir(), '.local/android')
 const BUILD_TOOLS = process.env.DSH_BUILD_TOOLS ?? join(ANDROID_HOME, 'build-tools/35.0.0')
-const JAVA_HOME = process.env.JAVA_HOME ?? '~/.local/android/jdk-21.0.12.1+1'
+const JAVA_HOME = process.env.JAVA_HOME ?? findJdk(ANDROID_HOME)
+const PROFILE_DIR = process.env.DSH_PROFILE_DIR ?? join(homedir(), '.dsh/profiles/web')
 const DSH_BIN = process.env.DSH_BIN ?? 'dsh'
+
+/** Newest `jdk-*` under the toolchain dir, or the path itself if it is a JDK. */
+function findJdk(base) {
+  try {
+    const entries = readdirSync(base).filter((name) => name.startsWith('jdk'))
+    if (entries.length > 0) return join(base, entries.sort().pop())
+  } catch {
+    /* fall through: report the unresolved path and let the check fail loudly */
+  }
+  return join(base, 'jdk')
+}
 
 const argv = process.argv.slice(2)
 const flags = new Set(argv.filter((a) => a.startsWith('--')))
@@ -201,9 +216,13 @@ if (!flags.has('--skip-gradle') && existsSync(join(JAVA_HOME, 'bin/java'))) {
 // ----- 5. DSH-side wiring ---------------------------------------------------
 
 console.log('DSH wiring')
-const profilePkg = '~/.dsh/profiles/web/package.json'
-check('dsh', 'web profile exists', existsSync(profilePkg))
-if (existsSync(profilePkg)) {
+// The profile only exists on a machine where dsh-mobile is actually deployed (or
+// being developed against). A fresh clone legitimately has none, so this section
+// reports "skipped" rather than failing.
+const profilePkg = join(PROFILE_DIR, 'package.json')
+if (!existsSync(profilePkg)) {
+  console.log(`       skipped: no DSH profile at ${PROFILE_DIR} — set DSH_PROFILE_DIR to assert this host's wiring`)
+} else {
   const pkg = JSON.parse(readFileSync(profilePkg, 'utf8'))
   const bundles = pkg.dsh?.profile?.bundles ?? []
   check('dsh', 'web profile depends on dsh-mobile-xc', Object.keys(pkg.dependencies ?? {}).includes('dsh-mobile-xc'), JSON.stringify(pkg.dependencies ?? {}))
@@ -221,16 +240,27 @@ for (const artifact of ['dsh-mobile-bridge.service', 'caddy-dsh-mobile.snippet',
   check('deploy', `deploy/${artifact} present`, existsSync(join(ROOT, 'deploy', artifact)))
 }
 
-if (!flags.has('--skip-dsh')) {
+// The shipped deploy files are templates, so assert them for portability rather
+// than comparing against whatever happens to be installed on this host.
+const unitTemplate = readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8')
+const caddyTemplate = readFileSync(join(ROOT, 'deploy/caddy-dsh-mobile.snippet'), 'utf8')
+check('deploy', 'unit template declares the download dir', unitTemplate.includes('DSH_BRIDGE_DOWNLOAD_DIR=@INSTALL_DIR@/dist'))
+check('deploy', 'unit template has no machine-specific paths', !/\/root\//.test(unitTemplate) && !/frankfurtlin/.test(unitTemplate))
+check('deploy', 'Caddy template has no machine-specific domain', !/frankfurtlin/.test(caddyTemplate) && caddyTemplate.includes('@DOMAIN@'))
+
+if (!flags.has('--skip-dsh') && existsSync(PROFILE_DIR)) {
   // Host-specific: assert the deployment described in docs/DEPLOY.md is actually
   // in place, not just that the artifacts exist in the repo.
   const installedUnit = '/etc/systemd/system/dsh-mobile-bridge.service'
   const liveCaddy = '/etc/caddy/Caddyfile'
-  const livePatch = '~/.dsh/profiles/web/cordis.patch.yml'
-  check('deploy', 'bridge unit is installed system-wide', existsSync(installedUnit)
-    && readFileSync(installedUnit, 'utf8') === readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8'), installedUnit)
-  check('deploy', 'Caddy routes /bridge/* to the bridge', existsSync(liveCaddy) && /handle\s+\/bridge\/\*/.test(readFileSync(liveCaddy, 'utf8')), liveCaddy)
-  check('deploy', 'bridge serves artifacts from dist/', readFileSync(join(ROOT, 'deploy/dsh-mobile-bridge.service'), 'utf8').includes('DSH_BRIDGE_DOWNLOAD_DIR=~/workspace/dsh-mobile/dist'))
+  const livePatch = join(PROFILE_DIR, 'cordis.patch.yml')
+  check('deploy', 'bridge unit is installed system-wide', existsSync(installedUnit), installedUnit)
+  if (existsSync(installedUnit)) {
+    // Placeholders are substituted at install time, so compare directives.
+    const installed = readFileSync(installedUnit, 'utf8')
+    check('deploy', 'installed unit runs the bridge entrypoint', /WorkingDirectory=\S+/.test(installed) && installed.includes('src/index.js'))
+  }
+  check('deploy', 'Caddy routes /bridge/* to the bridge', existsSync(liveCaddy) && /handle\s+\/bridge\//.test(readFileSync(liveCaddy, 'utf8')), liveCaddy)
   check('deploy', 'live profile carries the mcp-phone entry', existsSync(livePatch) && readFileSync(livePatch, 'utf8').includes('mcp-phone'), livePatch)
   if (existsSync(livePatch)) {
     check('deploy', 'live profile keeps an mcp-phone rollback copy', existsSync(`${livePatch}.rollback-no-mcp-phone`))

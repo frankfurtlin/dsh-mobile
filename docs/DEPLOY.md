@@ -24,7 +24,7 @@
 
 ```bash
 systemd-run --unit=dsh-mobile-restart-live --on-active=40 --collect \
-  bash ~/workspace/dsh-mobile/tools/restart-live.sh
+  bash ~/dsh-mobile/tools/restart-live.sh
 ```
 
 脚本行为：重启 `deepseek-harness.service` → 等 3080/3081 恢复 → 打印 bridge 单元、`/healthz` 与一次真实
@@ -35,7 +35,7 @@ MCP `initialize` 握手 → 失败则自动恢复 `package.json`（去掉 `dsh-m
 
 ```bash
 journalctl -u dsh-mobile-bridge -n 20 --no-pager | grep -i "mcp\|initialize"
-tail -12 ~/workspace/dsh-mobile/docs/verification/last-restart.log
+tail -12 ~/dsh-mobile/docs/verification/last-restart.log
 ```
 
 ## 0.1b 升级到 1.0.2（文件浏览）后要做什么
@@ -46,7 +46,7 @@ tail -12 ~/workspace/dsh-mobile/docs/verification/last-restart.log
 # 1) 服务端：让 bridge 重新加载 src/tools.js（新增 5 个 fs 工具）
 systemctl restart dsh-mobile-bridge
 curl -s http://127.0.0.1:3082/healthz                      # {"ok":true,...}
-cd ~/workspace/dsh-mobile && node tools/check-protocol-parity.mjs   # 9/9
+cd ~/dsh-mobile && node tools/check-protocol-parity.mjs   # 9/9
 # 2) 手机端：安装 1.0.2 release APK（覆盖安装即可，profile 不变）
 #    adb install -r packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk
 # 3) 手机上：App 菜单 →「选择可浏览的文件夹」，把要交给 Agent 的文件夹选上
@@ -67,7 +67,7 @@ https://dsh.example.com/bridge/download/DSH-Mobile-1.0.2.apk
 装新版本时把仓库根的最新签名包复制进 `dist/` 并覆盖下载（`tools/build-apk.sh --release` 之后）：
 
 ```bash
-cd ~/workspace/dsh-mobile
+cd ~/dsh-mobile
 tools/build-apk.sh --release
 cp packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk dist/DSH-Mobile-1.0.2.apk
 sha256sum dist/DSH-Mobile-1.0.2.apk packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk  # 两行必须一致
@@ -77,7 +77,7 @@ sha256sum dist/DSH-Mobile-1.0.2.apk packages/mobile-shell/android/app/build/outp
 
 | 变量 | 值 | 作用 |
 |---|---|---|
-| `DSH_BRIDGE_DOWNLOAD_DIR` | `~/workspace/dsh-mobile/dist` | 允许下载的**那一层**目录；留空则整条路由关闭（404） |
+| `DSH_BRIDGE_DOWNLOAD_DIR` | `~/dsh-mobile/dist` | 允许下载的**那一层**目录；留空则整条路由关闭（404） |
 | `DSH_BRIDGE_DOWNLOAD_PATH` | `/bridge/download` | URL 前缀，必须落在 Caddy 已代理的 `/bridge/*` 下 |
 
 行为边界（`packages/bridge-server/tools/smoke.mjs` 14 项断言覆盖）：必须是 `GET`/`HEAD`（否则 405）；
@@ -99,7 +99,7 @@ source ~/.local/android/env.sh && java -version && aapt2 version
 
 ```bash
 # 1) 服务单元
-install -m 0644 ~/workspace/dsh-mobile/deploy/dsh-mobile-bridge.service /etc/systemd/system/
+install -m 0644 ~/dsh-mobile/deploy/dsh-mobile-bridge.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now dsh-mobile-bridge
 systemctl status --no-pager dsh-mobile-bridge
@@ -164,7 +164,7 @@ cp /etc/caddy/Caddyfile /dev/null 2>/dev/null || true   # （无副作用，保�
 ```bash
 dsh --profile web --dump-config | grep -A3 mcp-phone   # 已写入线上 profile 时
 # 或先验证 patch 文件语法：
-dsh --profile mobspike --patch ~/workspace/dsh-mobile/deploy/dsh-profile-mcp-phone.yml --dump-config | grep -c phone
+dsh --profile mobspike --patch ~/dsh-mobile/deploy/dsh-profile-mcp-phone.yml --dump-config | grep -c phone
 ```
 
 > 注意：**重启 dsh web 会中断当前 Web 会话**（包括正在进行的对话）。建议在无人使用时执行，并用
@@ -179,7 +179,7 @@ dsh --profile mobspike --patch ~/workspace/dsh-mobile/deploy/dsh-profile-mcp-pho
 ```bash
 # 手机：打开 USB 调试并连接后
 adb devices
-adb install -r ~/workspace/dsh-mobile/packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk
+adb install -r ~/dsh-mobile/packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk
 ```
 
 release 包需要先签名（见 `docs/DELIVERY.md`）：`tools/gen-keystore.sh && tools/build-apk.sh --release`。

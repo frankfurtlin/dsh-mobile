@@ -2,7 +2,7 @@
 # install-toolchain.sh — 在用户空间安装 Android 构建工具链（JDK 21 + Android cmdline-tools）。
 #
 # 设计约束：
-#   * 全部装在 $ROOT（默认 ~/.local/android）下，不写 /usr、不调用 apt，
+#   * 全部装在 $ROOT（默认 ${HOME}/.local/android）下，不写 /usr、不调用 apt，
 #     以适配 workspace-write 沙箱策略。
 #   * 幂等：已存在的组件跳过下载/解压。
 #   * 可通过环境变量覆盖版本与镜像：
@@ -12,7 +12,7 @@
 # 用法： bash tools/install-toolchain.sh [--skip-sdk-packages]
 set -euo pipefail
 
-ROOT="${DSH_MOBILE_TOOLCHAIN:-~/.local/android}"
+ROOT="${DSH_MOBILE_TOOLCHAIN:-${HOME}/.local/android}"
 JDK_URL="${JDK_URL:-https://mirrors.tuna.tsinghua.edu.cn/Adoptium/21/jdk/x64/linux/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz}"
 CMDLINE_URL="${CMDLINE_URL:-https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip}"
 

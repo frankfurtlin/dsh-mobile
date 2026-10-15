@@ -8,14 +8,14 @@
 //   node tools/shoot.mjs --url "http://127.0.0.1:3099/?token=..." --out docs/verification/spike-xc --label xc
 //   node tools/shoot.mjs --url ... --out ... --label base --widths 390x844,1440x900
 //
-// 依赖：playwright（默认取本机 deepseek-harness 的 pnpm store 版本，
-//       可用 PLAYWRIGHT_PATH 覆盖；浏览器取自 ~/.cache/ms-playwright）。
+// 依赖：playwright（自动探测，可用 PLAYWRIGHT_PATH 覆盖；
+//       浏览器取自 ~/.cache/ms-playwright）。
 import { mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+import { resolvePlaywright } from './lib/playwright.mjs'
 
 const require = createRequire(import.meta.url)
-const DEFAULT_PW = '~/deepseek-harness/node_modules/.pnpm/playwright@1.63.0-alpha-2026-08-31/node_modules/playwright'
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`)
@@ -34,12 +34,11 @@ if (!url) {
   process.exit(2)
 }
 
-const pwPath = process.env.PLAYWRIGHT_PATH || DEFAULT_PW
 let chromium
 try {
-  ;({ chromium } = require(pwPath))
+  ;({ chromium } = resolvePlaywright())
 } catch (error) {
-  console.error(`无法加载 playwright（${pwPath}）：${error.message}`)
+  console.error(`无法加载 playwright：${error.message}`)
   process.exit(3)
 }
 

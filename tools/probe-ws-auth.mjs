@@ -10,9 +10,12 @@
  * holding a valid `dsh_gateway_token` may reach `welcome`.
  *
  * Usage:
- *   node tools/probe-ws-auth.mjs                                   # wss://dsh.example.com/bridge/ws
- *   node tools/probe-ws-auth.mjs --url ws://127.0.0.1:3082/bridge/ws
- *   node tools/probe-ws-auth.mjs --json docs/verification/ws-auth.json
+ *   node tools/probe-ws-auth.mjs --url wss://<your-host>/bridge/ws
+ *   node tools/probe-ws-auth.mjs --url ws://127.0.0.1:3082/bridge/ws   # loopback
+ *   node tools/probe-ws-auth.mjs --url ... --json out.json
+ *
+ * --url is required: the public host is deployment-specific, so there is no
+ * sensible default and a wrong one would probe the wrong server.
  *
  * Exit code 1 when any expectation fails.
  */
@@ -30,7 +33,11 @@ const WebSocket = require('ws')
 
 const argv = process.argv.slice(2)
 const urlFlag = argv.indexOf('--url')
-const url = urlFlag >= 0 ? argv[urlFlag + 1] : 'wss://dsh.example.com/bridge/ws'
+const url = urlFlag >= 0 ? argv[urlFlag + 1] : null
+if (!url) {
+  console.error('missing --url (e.g. --url wss://<your-host>/bridge/ws)')
+  process.exit(2)
+}
 // A browser sends the page's http(s) origin, not the ws(s) URL, so swap the
 // scheme instead of reading URL.origin (which would yield wss://…).
 const origin = new URL(url).origin.replace(/^ws/, 'http').replace(/\/$/, '')

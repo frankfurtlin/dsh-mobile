@@ -5,13 +5,13 @@
 #   tools/gen-keystore.sh --force    # replace it (changes the app signing identity!)
 #
 # Output:
-#   ~/.secrets/dsh-mobile-release.jks         the keystore
-#   ~/.secrets/dsh-mobile-signing.properties  shell-sourceable vars used by tools/build-apk.sh --release
+#   ${HOME}/.secrets/dsh-mobile-release.jks         the keystore
+#   ${HOME}/.secrets/dsh-mobile-signing.properties  shell-sourceable vars used by tools/build-apk.sh --release
 #
 # Back up both files: losing them means you can never update an installed release APK in place.
 set -euo pipefail
 
-SECRETS_DIR="${DSH_SECRETS_DIR:-~/.secrets}"
+SECRETS_DIR="${DSH_SECRETS_DIR:-${HOME}/.secrets}"
 KEYSTORE="$SECRETS_DIR/dsh-mobile-release.jks"
 PROPS="$SECRETS_DIR/dsh-mobile-signing.properties"
 ALIAS="${DSH_KEY_ALIAS:-dsh-mobile}"
@@ -32,11 +32,11 @@ for arg in "$@"; do
   esac
 done
 
-if [[ -f ~/.local/android/env.sh ]]; then
+if [[ -f ${HOME}/.local/android/env.sh ]]; then
   # shellcheck disable=SC1091
-  source ~/.local/android/env.sh
+  source ${HOME}/.local/android/env.sh
 fi
-: "${JAVA_HOME:?JAVA_HOME missing - run tools/install-toolchain.sh or source ~/.local/android/env.sh}"
+: "${JAVA_HOME:?JAVA_HOME missing - run tools/install-toolchain.sh or source ${HOME}/.local/android/env.sh}"
 
 if [[ -e "$KEYSTORE" && "$FORCE" -ne 1 ]]; then
   echo "keystore already exists: $KEYSTORE" >&2

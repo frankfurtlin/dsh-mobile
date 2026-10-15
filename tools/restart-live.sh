@@ -7,7 +7,7 @@
 # (systemd-run --on-active), so it survives the restart it performs:
 #
 #   systemd-run --unit=dsh-mobile-restart-live --on-active=15 --collect \
-#     ~/workspace/dsh-mobile/tools/restart-live.sh
+#     "$(pwd)/tools/restart-live.sh"
 #
 # Guarantees:
 #   1. restart the service, wait until 3080 (dsh web) and 3081 (dsh-passwords
@@ -23,8 +23,9 @@
 # MODE=check probes health only and changes nothing.
 set -uo pipefail
 
-UNIT=deepseek-harness.service
-PROFILE=~/.dsh/profiles/web
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+UNIT="${DSH_SERVICE:-deepseek-harness.service}"
+PROFILE="${DSH_PROFILE_DIR:-${HOME}/.dsh/profiles/web}"
 PKG="$PROFILE/package.json"
 # Pre-change snapshot restored when the restart fails. Rollback files are named
 # after what they *remove*, so prefer the most recent, most specific one: a
@@ -34,7 +35,7 @@ ROLLBACK="${ROLLBACK_PKG:-}"
 PATCH="$PROFILE/cordis.patch.yml"
 PATCH_ROLLBACK="$PROFILE/cordis.patch.yml.rollback-no-mcp-phone"
 BRIDGE_UNIT=dsh-mobile-bridge.service
-OUT=~/workspace/dsh-mobile/docs/verification/last-restart.log
+OUT="$ROOT/docs/verification/last-restart.log"
 MODE="${MODE:-restart}"
 WAIT="${WAIT:-90}"
 

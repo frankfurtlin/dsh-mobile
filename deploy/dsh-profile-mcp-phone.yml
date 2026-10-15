@@ -1,8 +1,12 @@
 # Adds the phone bridge as an MCP server to the `web` profile.
+#
 # Apply one of two ways:
-#   1. one-off:      dsh --profile web --patch ~/workspace/dsh-mobile/deploy/dsh-profile-mcp-phone.yml
-#   2. permanently:  append the entry below to ~/.dsh/profiles/web/cordis.patch.yml
+#   1. one-off:      dsh --profile web --patch <this file>
+#   2. permanently:  append the entry below to the profile's cordis.patch.yml
+#                    (default location: ~/.dsh/profiles/web/cordis.patch.yml)
 # Either way the running `dsh web` process must be restarted for it to take effect.
+#
+# The bridge is loopback-only, so the URL below is not machine-specific.
 - insert:
     - id: mcp-phone
       name: '@deepseek-ai/dsh-mcp-client'

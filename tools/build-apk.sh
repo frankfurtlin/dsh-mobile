@@ -9,7 +9,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ANDROID_DIR="$ROOT/packages/mobile-shell/android"
-SIGNING_PROPS="${DSH_SIGNING_PROPS:-~/.secrets/dsh-mobile-signing.properties}"
+SIGNING_PROPS="${DSH_SIGNING_PROPS:-${HOME}/.secrets/dsh-mobile-signing.properties}"
 
 MODE="debug"
 for arg in "$@"; do
@@ -27,20 +27,20 @@ for arg in "$@"; do
   esac
 done
 
-if [[ -f ~/.local/android/env.sh ]]; then
+if [[ -f ${HOME}/.local/android/env.sh ]]; then
   # shellcheck disable=SC1091
-  source ~/.local/android/env.sh
+  source ${HOME}/.local/android/env.sh
 fi
 
-: "${JAVA_HOME:?JAVA_HOME missing - run tools/install-toolchain.sh or source ~/.local/android/env.sh}"
-: "${ANDROID_HOME:?ANDROID_HOME missing - run tools/install-toolchain.sh or source ~/.local/android/env.sh}"
+: "${JAVA_HOME:?JAVA_HOME missing - run tools/install-toolchain.sh or source ${HOME}/.local/android/env.sh}"
+: "${ANDROID_HOME:?ANDROID_HOME missing - run tools/install-toolchain.sh or source ${HOME}/.local/android/env.sh}"
 
 cd "$ANDROID_DIR"
 
 if [[ "$MODE" == "release" ]]; then
   if [[ ! -f "$SIGNING_PROPS" ]]; then
     echo "release signing config missing: $SIGNING_PROPS" >&2
-    echo "run tools/gen-keystore.sh first (keystore + properties live outside the repo, in ~/.secrets)" >&2
+    echo "run tools/gen-keystore.sh first (keystore + properties live outside the repo, in ${HOME}/.secrets)" >&2
     exit 1
   fi
   # shellcheck disable=SC1090

@@ -34,16 +34,16 @@ public class EndpointTest {
   }
 
   @Test public void defaultsToHttpsAndStripsPaths() {
-    Endpoint bare = ok("dsh.example.com");
-    assertEquals("https://dsh.example.com", bare.base);
+    Endpoint bare = ok("example.com");
+    assertEquals("https://example.com", bare.base);
     assertTrue(bare.secure);
-    assertEquals("dsh.example.com", bare.host);
+    assertEquals("example.com", bare.host);
 
-    Endpoint messy = ok("  https://dsh.example.com/  ");
-    assertEquals("https://dsh.example.com", messy.base);
+    Endpoint messy = ok("  https://example.com/  ");
+    assertEquals("https://example.com", messy.base);
 
-    Endpoint deep = ok("https://dsh.example.com/some/path?x=1#frag");
-    assertEquals("https://dsh.example.com", deep.base);
+    Endpoint deep = ok("https://example.com/some/path?x=1#frag");
+    assertEquals("https://example.com", deep.base);
   }
 
   @Test public void keepsExplicitSchemeAndPort() {
@@ -63,31 +63,31 @@ public class EndpointTest {
   }
 
   @Test public void buildsGatewayUrls() {
-    Endpoint e = ok("https://dsh.example.com");
-    assertEquals("https://dsh.example.com/gateway/login?next=%2F", e.loginUrl("/"));
-    assertEquals("https://dsh.example.com/gateway/login?next=%2F", e.loginUrl(null));
-    assertEquals("https://dsh.example.com/gateway/login?next=%2Fx%20y%3Fz%3D1", e.loginUrl("/x y?z=1"));
-    assertEquals("https://dsh.example.com/gateway/healthz", e.healthUrl());
-    assertEquals("https://dsh.example.com/gateway/readyz", e.readyUrl());
-    assertEquals("https://dsh.example.com/gateway/logout", e.logoutUrl());
+    Endpoint e = ok("https://example.com");
+    assertEquals("https://example.com/gateway/login?next=%2F", e.loginUrl("/"));
+    assertEquals("https://example.com/gateway/login?next=%2F", e.loginUrl(null));
+    assertEquals("https://example.com/gateway/login?next=%2Fx%20y%3Fz%3D1", e.loginUrl("/x y?z=1"));
+    assertEquals("https://example.com/gateway/healthz", e.healthUrl());
+    assertEquals("https://example.com/gateway/readyz", e.readyUrl());
+    assertEquals("https://example.com/gateway/logout", e.logoutUrl());
   }
 
   @Test public void mapsBridgeUrlToWebSocketScheme() {
-    assertEquals("wss://dsh.example.com/bridge/ws", ok("https://dsh.example.com").bridgeUrl());
+    assertEquals("wss://example.com/bridge/ws", ok("https://example.com").bridgeUrl());
     assertEquals("ws://192.168.1.5:8443/bridge/ws", ok("http://192.168.1.5:8443").bridgeUrl());
   }
 
   @Test public void ownsOnlyItsOwnHost() {
-    Endpoint e = ok("https://dsh.example.com");
-    assertTrue(e.owns("https://dsh.example.com/"));
+    Endpoint e = ok("https://example.com");
+    assertTrue(e.owns("https://example.com/"));
     assertTrue(e.owns("https://EXAMPLE.com/chat"));
     assertFalse(e.owns("https://evil.example.com/"));
-    assertFalse(e.owns("https://sub.dsh.example.com/"));
+    assertFalse(e.owns("https://sub.example.com/"));
     assertFalse(e.owns(null));
   }
 
   @Test public void keepsNonHttpUrlsInsideTheWebView() {
-    Endpoint e = ok("https://dsh.example.com");
+    Endpoint e = ok("https://example.com");
     assertTrue(e.owns("about:blank"));
     assertTrue(e.owns("javascript:void(0)"));
     assertTrue(e.owns("data:text/plain,hi"));

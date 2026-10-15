@@ -1,11 +1,16 @@
 # Publish the phone WebSocket on the existing public host.
 # The bridge itself only listens on loopback; nothing else it serves is exposed.
 #
-# Replace the current `dsh.example.com { reverse_proxy 127.0.0.1:3081 }`
-# block in /etc/caddy/Caddyfile with the block below, then:
+# The bridge must be mounted under the *same* origin as the DSH web UI: the
+# phone authenticates the WSS handshake with the gateway cookie, which is
+# scoped to that origin. A separate subdomain would not carry it.
+#
+# Replace @DOMAIN@ with the host that already serves your DSH web UI, i.e.
+# replace the existing `example.com { reverse_proxy 127.0.0.1:3081 }` block in
+# /etc/caddy/Caddyfile with the block below, then:
 #   caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
 
-dsh.example.com {
+@DOMAIN@ {
 	handle /bridge/* {
 		reverse_proxy 127.0.0.1:3082
 	}

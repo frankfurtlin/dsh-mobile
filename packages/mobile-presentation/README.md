@@ -11,7 +11,7 @@ DSH 移动端**表现层**插件：正文排版、留白、对比度、原生触
 ## 装
 
 ```sh
-dsh plugin --profile web add ~/workspace/dsh-mobile/packages/mobile-presentation
+dsh plugin --profile web add ./packages/mobile-presentation   # 在仓库根目录执行
 # 重启 dsh web 后生效
 ```
 
