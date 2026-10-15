@@ -35,6 +35,6 @@ body:
     attributes:
       value: |
         > 提醒：本项目的移动端界面走 WebView + 服务端 CSS 注入，
-        > 而不是原生重写（理由见 [ADR-0007](../blob/master/docs/adr/0007-mobile-presentation-layer.md)）。
+        > 而不是原生重写（理由见 [ADR-0007](../blob/main/docs/adr/0007-mobile-presentation-layer.md)）。
         > 如果你的需求是"更像原生 App"，请说明具体是哪种表现（滚动、长按菜单、过渡动画…），
         > 有些能用 CSS 解决，有些必须原生实现。
