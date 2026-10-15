@@ -1,0 +1,132 @@
+name: android release
+
+# Publishing is driven by tags so the APK version and the release always agree:
+#
+#   git tag v1.0.3 && git push origin v1.0.3
+#
+# A manual run (workflow_dispatch) builds the same thing without publishing, for
+# rehearsing a change to this workflow.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（如 1.0.3）。留空则用 run number 生成一个仅用于试跑的版本。'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36'
+
+      - name: Sync Capacitor
+        working-directory: packages/mobile-shell
+        # android/app/src/main/assets/public and capacitor.config.json are
+        # generated (git-ignored), so the web layer has to be materialised here.
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Resolve version
+        id: v
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            NAME="${GITHUB_REF_NAME#v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            NAME="${{ inputs.version }}"
+          else
+            NAME="0.0.${GITHUB_RUN_NUMBER}"
+          fi
+          IFS=. read -r MA MI PA <<< "$NAME"
+          # Must stay above the versionCode of every already-installed build
+          # (1.0.2 shipped as 3) or Android refuses to update in place.
+          CODE=$(( MA * 10000 + MI * 100 + PA ))
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "version $NAME -> versionCode $CODE"
+
+      - name: Unit tests
+        working-directory: packages/mobile-shell/android
+        run: ./gradlew testDebugUnitTest --console=plain
+
+      - name: Decode keystore
+        # Same identity as previous releases; a different key would make every
+        # installed app refuse the update (signature mismatch).
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build signed release APK
+        working-directory: packages/mobile-shell/android
+        run: |
+          set -euo pipefail
+          ./gradlew assembleRelease --console=plain \
+            -PdshVersionCode=${{ steps.v.outputs.code }} \
+            -PdshVersionName=${{ steps.v.outputs.name }} \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.jks" \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      - name: Verify signature and collect artifact
+        id: apk
+        run: |
+          set -euo pipefail
+          SRC="packages/mobile-shell/android/app/build/outputs/apk/release/app-release.apk"
+          OUT="DSH-Mobile-${{ steps.v.outputs.name }}.apk"
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs "$SRC"
+          cp "$SRC" "$OUT"
+          echo "sha256=$(sha256sum "$OUT" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+          ls -l "$OUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DSH-Mobile-${{ steps.v.outputs.name }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 30
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.apk.outputs.file }}
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            DSH Mobile ${{ steps.v.outputs.name }}
+
+            versionCode: `${{ steps.v.outputs.code }}`
+            sha256: `${{ steps.apk.outputs.sha256 }}`
+
+            安装方式：下载下方 APK 直接覆盖安装。若系统提示「应用未安装」，
+            多半是签名不一致（本包与 1.0.2 使用同一把 keystore 签名）。
