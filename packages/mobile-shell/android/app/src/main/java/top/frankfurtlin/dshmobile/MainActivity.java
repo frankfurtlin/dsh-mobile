@@ -21,6 +21,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
@@ -115,8 +116,9 @@ public class MainActivity extends AppCompatActivity {
     androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
     if (getSupportActionBar() != null) {
+      // Title only: a subtitle puts the bar on two lines and costs ~18dp of the phone's
+      // vertical budget (74dp vs 56dp) for a host name that 更换服务器/手机桥 both show.
       getSupportActionBar().setTitle("DSH");
-      getSupportActionBar().setSubtitle(endpoint.host);
     }
 
     applySystemBars();
@@ -523,10 +525,26 @@ public class MainActivity extends AppCompatActivity {
                 | WindowInsetsCompat.Type.displayCutout());
             toolbar.setPadding(toolbar.getPaddingLeft(), bar.top, toolbar.getPaddingRight(),
                 toolbar.getPaddingBottom());
+            // The bar carries a title and an overflow button and nothing else, so its height is
+            // pinned instead of measured: wrap_content + minHeight=?attr/actionBarSize came out
+            // 74dp tall on a 480dp-wide phone (title 31dp plus the toolbar's own content
+            // padding), i.e. ~111dp of the screen gone before any content. 48dp is the overflow
+            // button's own minimum, so the menu stays fully reachable.
+            ViewGroup.LayoutParams lp = toolbar.getLayoutParams();
+            int height = bar.top + dp(48);
+            if (lp.height != height) {
+              lp.height = height;
+              toolbar.setLayoutParams(lp);
+            }
             container.setPadding(0, 0, 0, bar.bottom);
             return insets;
           }
         });
+  }
+
+  /** Density-independent pixels, for the few places where a layout value is set from code. */
+  private int dp(int value) {
+    return Math.round(value * getResources().getDisplayMetrics().density);
   }
 
   private void requestNotificationPermissionIfNeeded() {

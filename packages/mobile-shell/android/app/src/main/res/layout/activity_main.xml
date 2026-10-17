@@ -7,9 +7,10 @@
     tools:context=".MainActivity">
 
     <!--
-      Height is wrap_content + minHeight on purpose: applySystemBars() adds the status-bar
-      inset as padding-top, and with a fixed actionBarSize the title and the overflow button
-      were squeezed out of view (the menu became unreachable).
+      Height is wrap_content on purpose: applySystemBars() adds the status-bar inset as
+      padding-top, and with a fixed actionBarSize the title and the overflow button were
+      squeezed out of view (the menu became unreachable). That listener also pins the final
+      height to inset + 48dp, because wrap_content measured 74dp of content on a 480dp phone.
     -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"

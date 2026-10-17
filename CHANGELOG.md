@@ -31,9 +31,25 @@
   断言——APK 清单里 `connectedDevice` 前台服务必须带设备连接类前置权限、凭证加密不得自带 IV、
   工具栏必须能随状态栏 inset 长高，以及两个 `package-lock.json` 的 `resolved` 必须来自公开
   registry。单测总数 16 → 24。
+- **`dsh-mobile-ux` 新增「去挤压」一节**（`styles/mobile.css` §7）：桌面骨架的固定留白
+  （会话头 76px 最小高度、tab 行 36px 间距、输入区 52px 最小高度）在 480dp 竖屏上叠成
+  几条横带。会话头 111 → 88dp、输入卡 122 → 113dp；连上原生工具栏的改动，
+  正文可视区 548 → 约 670dp（+22%）。
+  锚点改用 DSH 的 `data-*` 钩子（`data-conversation-tabs` / `data-composer-dock` /
+  `data-composer-input`），不再依赖类名片段；底部三个用量胶囊不再被压成省略号；
+  模型触发器钉成图标形态（DSH 自己的紧凑判定阈值只有几像素余量，实测时紧时不紧）。
+- **原生工具栏瘦身**（1.0.13）：去掉 `DSH` 下面那行域名副标题，`applySystemBars()`
+  里把最终高度钉成「状态栏 inset + 48dp」——`wrap_content + minHeight=?attr/actionBarSize`
+  在 480dp 宽的手机上量出 74dp（标题 31dp 加工具栏自带的垂直内边距），整条 111dp；
+  钉住后 102dp。48dp 是溢出按钮自己的最小高度，菜单仍然完全可达。
+  名字仍可从「更换服务器」与「手机桥」看到。
 
 ### 修复
 
+- **移动端汉堡按钮落进文档流**：vendor 里 `.dsh-xc-ham` 的 `position: fixed; top: 10px`
+  在真机上不生效，按钮成了纵向布局里的一个 40dp 方块——底部一半被视口裁掉，同时
+  顶出约 130dp 空白，把整条输入区往上推。表现层 7.5 用同值声明 + `!important` 重新
+  钉回左上角，那 130dp 归还给正文。
 - **CI 第一次运行就死在 `Sync Capacitor`**：两个 `package-lock.json` 的 `resolved` 全部指向
   `http://mirrors.tencentyun.com/npm`（腾讯云内网镜像，在本机解析成 link-local 的 `169.254.0.3`），
   GitHub runner 解析不到这个主机名，`npm ci` 直接失败。它死在签名之前，看起来像 secret 配错了。

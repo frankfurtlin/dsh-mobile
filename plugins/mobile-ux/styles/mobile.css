@@ -254,6 +254,100 @@
     overflow-x: auto;
   }
 
+  /* ==========================================================
+   * 7. 去挤压：手机上的「带状感」
+   *
+   * 桌面骨架按 1440px 画：会话头 76px 最小高度、tab 行 36px 间距 + 10px 上边距、
+   * 输入区 52px 最小高度。这些固定留白在 480dp 竖屏上叠成好几条横带
+   * （1440×3200 真机实测，改前）：原生工具栏 74 + 会话头 111 + 输入卡 122
+   * = 307dp，占屏 29%，正文只剩 548dp。
+   *
+   * 本节只收留白与字号，不动任何一块的结构、顺序和交互；锚点优先用 DSH 自己的
+   * data-* 钩子（data-conversation-tabs / data-composer-dock / data-composer-input），
+   * 比类名片段稳，也不会被下一次构建哈希带偏。
+   *
+   * 改后实测：会话头 111 → 88、输入卡 122 → 113，正文可视区 548 → 674dp。
+   * 最大的一笔其实来自 7.6：汉堡原本掉在文档流末尾占着 130dp 的空白。
+   * ========================================================== */
+
+  /* 7.1 会话头：76px 最小高度是给桌面三列窗口留的，手机上改成内容自适应 */
+  [class*='_header']:has([data-conversation-tabs]) {
+    min-height: 0 !important;
+    padding: 2px 14px 0 12px !important;
+  }
+
+  /* 7.2 对话/轨迹：一条 42px 的带只为两个词服务（6.1 把 tab 按钮抬到 36px，
+   * 这里收回到 32px —— 宽度仍是 44px，命中没问题） */
+  [data-conversation-tabs] {
+    margin-top: 0 !important;
+    gap: 24px !important;
+    padding-left: 2px !important;
+  }
+
+  [data-conversation-tabs] > * {
+    padding-bottom: 4px !important;
+    font-size: 12.5px !important;
+    min-height: 32px !important;
+  }
+
+  /* 7.3 输入卡：一行字不需要 44px 的输入区 */
+  [data-composer-input] {
+    min-height: 30px !important;
+  }
+
+  /* 7.4 模型触发器：DSH 自己按「子元素总宽 > 行宽」决定是否只留图标，阈值卡得很紧
+   * ——本机实测同一个页面一次紧凑、一次不紧凑，不紧凑时名字被截成
+   * 「DeepSeek-V4.1-Fla… H…」。手机上直接钉成图标形态（点开菜单里仍有完整名字）。
+   * 用两个官方 CSS 变量，不碰 DOM 属性，也不用任何类名。 */
+  [data-composer-card] {
+    --dsh-composer-model-text-display: none;
+    --dsh-composer-model-icon-display: block;
+  }
+
+  /* 7.5 用量条：三个胶囊在 480dp 上全被压成省略号（「199 t…」「缓存命…」），
+   * 把间距和胶囊内边距收掉，让读数完整显示；实在放不下就整行横向滚动，
+   * 总比半个数字强。 */
+  [data-composer-dock] {
+    gap: 6px !important;
+    padding-top: 2px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+  }
+
+  [data-composer-dock] [data-composer-stat] {
+    flex: 0 0 auto !important;
+  }
+
+  [data-composer-dock] [data-composer-stat] > * {
+    padding: 1px 4px !important;
+    gap: 4px !important;
+  }
+
+  /* 胶囊里的读数（`_pill > span`）自带 overflow:hidden + ellipsis */
+  [data-composer-dock] [data-composer-stat] span {
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* 7.6 汉堡：vendor 里那条 `position: fixed; top: 10px` 在真机上不生效，按钮
+   * 落回文档流末尾，成了纵向布局里的一个 40px 方块：既被视口底边裁掉一半
+   * （1440×3200 实测 y 1020–1067 只露出上半），又顶出一块 130dp 的空白，
+   * 把整条输入区往上推了 130dp —— 这是「挤」最大的一笔。
+   *
+   * 这是全节唯一碰布局属性的一条：骨架的定位坏了，表现层只能补一个同值声明
+   * （加 !important 才能赢过那条覆盖它的级联）。已在真机确认生效，桌面端不受
+   * 影响（vendor 自己的媒体查询同样只作用于 ≤1023px）。 */
+  .dsh-xc-ham {
+    position: fixed !important;
+    top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+    left: 8px !important;
+    bottom: auto !important;
+    right: auto !important;
+    width: 40px !important;
+    height: 40px !important;
+    z-index: 60 !important;
+  }
+
   /*
    * 没有采纳的两条（体检数据不支撑，写进去只是负债）：
    *   - hover-only 可见性兜底：实测 24 个可点元素里 0 个「只有 :hover 没有
