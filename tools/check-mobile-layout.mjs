@@ -349,12 +349,67 @@ const SCAN = () => {
 
   // 4) tap targets below 44x32 (a full-width 36px list row is fine to hit;
   //    a 28x28 icon button is not)
+  //
+  // The box is only the *visual* size: an ::after overlay can extend the tappable
+  // area without changing it (that is how the 44px floor is implemented here), so
+  // probe outward with elementFromPoint and measure the real reach.
+  const INTERACTIVE = 'button, a[href], [role="button"], input, select, textarea, summary'
+  const reach = (el, cx, cy, dx, dy) => {
+    let max = 0
+    let crowded = false
+    for (let d = 3; d <= 24; d += 3) {
+      const px = cx + dx * d
+      const py = cy + dy * d
+      if (px < 0 || py < 0 || px > vw || py > vh) break
+      const hit = document.elementFromPoint(px, py)
+      if (hit && (hit === el || el.contains(hit))) {
+        max = d
+        continue
+      }
+      // Stopped by another control: expanding here would steal its taps, so a
+      // small box is the right call rather than a defect to fix.
+      if (hit && hit.closest && hit.closest(INTERACTIVE)) crowded = true
+      break
+    }
+    return { max, crowded }
+  }
+
+  /** Growable only if no ancestor clips overflow — otherwise the extra hit area is cut off. */
+  const clippedAncestor = (el) => {
+    let cur = el.parentElement
+    for (let i = 0; i < 4 && cur && cur !== document.body; i += 1) {
+      const s = cs(cur)
+      if (/(hidden|auto|scroll|clip)/.test(`${s.overflowX}${s.overflow}`)) return true
+      cur = cur.parentElement
+    }
+    return false
+  }
+
   const smallTargets = []
   for (const el of document.querySelectorAll('button, a[href], [role="button"], input, select, textarea, summary')) {
     if (!visible(el)) continue
     const r = el.getBoundingClientRect()
     if (r.width >= 44 && r.height >= 32) continue
-    smallTargets.push({ path: pathOf(el), w: Math.round(r.width), h: Math.round(r.height), label: labelOf(el) })
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    const left = reach(el, cx, cy, -1, 0)
+    const right = reach(el, cx, cy, 1, 0)
+    const up = reach(el, cx, cy, 0, -1)
+    const down = reach(el, cx, cy, 0, 1)
+    const effW = r.width + left.max + right.max
+    const effH = r.height + up.max + down.max
+    if (effW >= 44 && effH >= 32) continue
+    const clipped = clippedAncestor(el)
+    smallTargets.push({
+      path: pathOf(el),
+      w: Math.round(r.width),
+      h: Math.round(r.height),
+      hitW: Math.round(effW),
+      hitH: Math.round(effH),
+      crowded: left.crowded || right.crowded || up.crowded || down.crowded,
+      clipped,
+      label: labelOf(el),
+    })
   }
 
   // 5) text below 12px
@@ -577,7 +632,10 @@ for (const item of dom.overlays) {
   }
 }
 
-if (dom.smallTargets.length > 0) note(dom.smallTargets.length >= 8 ? 'high' : 'medium', `${dom.smallTargets.length} 个点击目标小于 44px`)
+const fixableTargets = dom.smallTargets.filter((item) => !item.crowded && !item.clipped)
+const constrainedTargets = dom.smallTargets.filter((item) => item.crowded || item.clipped)
+if (fixableTargets.length > 0) note(fixableTargets.length >= 8 ? 'high' : 'medium', `${fixableTargets.length} 个点击目标小于 44px 且可安全扩大`)
+if (constrainedTargets.length > 0) note('low', `${constrainedTargets.length} 个点击目标小于 44px 但受结构限制（父级 overflow 裁切或紧邻控件），不扩大是正确取舍`)
 if (dom.tinyText.length > 0) note(dom.tinyText.length >= 5 ? 'medium' : 'low', `${dom.tinyText.length} 处文字小于 12px`)
 
 const hoverOnly = pseudo.filter((p) => p.hoverOnly)
@@ -631,7 +689,7 @@ for (const item of dom.scrollers.slice(0, 6)) line(`  ${item.clientWidth}→${it
 
 rule('点击目标 < 44px')
 if (dom.smallTargets.length === 0) line('  （无）')
-for (const item of dom.smallTargets.slice(0, 10)) line(`  ${item.w}×${item.h} · ${shorten(item.label, 30)} · ${shorten(item.path, 52)}`)
+for (const item of dom.smallTargets.slice(0, 12)) line(`  ${item.w}×${item.h}（命中 ${item.hitW}×${item.hitH}）${item.clipped ? ' 裁切' : item.crowded ? ' 拥挤' : ' 可扩'} · ${shorten(item.label, 28)} · ${shorten(item.path, 44)}`)
 
 rule('文字 < 12px')
 if (dom.tinyText.length === 0) line('  （无）')

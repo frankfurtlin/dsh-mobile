@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-17T02:53:47.080Z",
+  "checkedAt": "2026-10-17T03:15:48.860Z",
   "url": "http://127.0.0.1:3098/?token=***",
   "viewport": {
     "w": 390,
@@ -43,22 +43,154 @@
     "overlays": [],
     "smallTargets": [
       {
+        "path": "div > div.VoX2oq_root > button.VoX2oq_trigger",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": true,
+        "clipped": true,
+        "label": "Agent Team"
+      },
+      {
+        "path": "div.wSkVaW_headerUtilities > div > button.nArs4W_toggleButton",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": false,
+        "label": "Expand bottom panel"
+      },
+      {
+        "path": "div.wSkVaW_headerCorner > div > button._button_1rv3m_2._ghost_1rv3m_45",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": false,
+        "label": "Open right sidebar"
+      },
+      {
+        "path": "div.Sixlwa_userRow > div.xzv4MW_actions > button.xzv4MW_action",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": true,
+        "label": "Copy"
+      },
+      {
         "path": "div.O_Ebla_root > div > button.O_Ebla_title",
         "w": 158,
         "h": 16,
+        "hitW": 158,
+        "hitH": 16,
+        "crowded": true,
+        "clipped": false,
         "label": "Analysis completed"
       },
       {
         "path": "div._root_k7ery_9 > div._header_k7ery_16 > div._row_k7ery_26.lcKema_row",
         "w": 348,
         "h": 24,
+        "hitW": 348,
+        "hitH": 24,
+        "crowded": true,
+        "clipped": false,
         "label": "ThinkThe user wants a de"
+      },
+      {
+        "path": "div.TS9iAW_root > div.xzv4MW_actions.TS9iAW_actions > button.xzv4MW_action",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": true,
+        "label": "Copy"
+      },
+      {
+        "path": "div.xzv4MW_actions.TS9iAW_actions > div > button._8_XoUG_action",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": true,
+        "label": "Good response"
+      },
+      {
+        "path": "div.xzv4MW_actions.TS9iAW_actions > div > button._8_XoUG_action",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": true,
+        "label": "Bad response"
+      },
+      {
+        "path": "div.TS9iAW_root > div.xzv4MW_actions.TS9iAW_actions > button.xzv4MW_action",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": true,
+        "label": "Branch into a new conversation"
       },
       {
         "path": "span.xzv4MW_endInfo > span.Q51KRG_root > button.Q51KRG_trigger",
         "w": 28,
         "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": true,
         "label": "Usage 9.6K tok"
+      },
+      {
+        "path": "div.uV2eYG_row > div.uV2eYG_tools > button.uV2eYG_add",
+        "w": 28,
+        "h": 28,
+        "hitW": 28,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": false,
+        "label": "Add files or run commands"
+      },
+      {
+        "path": "div > span._root_4ub78_1 > button.iWlSmW_trigger",
+        "w": 44,
+        "h": 28,
+        "hitW": 44,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": false,
+        "label": "Access mode, current: Workspace Write"
+      },
+      {
+        "path": "div > div._7KE1Ra_root > button._7KE1Ra_trigger",
+        "w": 170,
+        "h": 28,
+        "hitW": 170,
+        "hitH": 28,
+        "crowded": false,
+        "clipped": false,
+        "label": "Select model, current DeepSeek-V4.1-Flash, reasoning effort High"
+      },
+      {
+        "path": "div.uV2eYG_row > div.uV2eYG_trailing > button.uV2eYG_primary",
+        "w": 34,
+        "h": 34,
+        "hitW": 34,
+        "hitH": 34,
+        "crowded": false,
+        "clipped": false,
+        "label": "Send message"
       }
     ],
     "tinyText": [
@@ -896,7 +1028,7 @@
             },
             {
               "file": "node_modules/dsh-mobile-ux/styles/mobile.css",
-              "line": 234,
+              "line": 245,
               "text": ":hover"
             }
           ]
@@ -909,6 +1041,6 @@
     "critical": 0,
     "high": 0,
     "medium": 6,
-    "low": 2
+    "low": 3
   }
 }

@@ -192,15 +192,26 @@
 
   /*
    * 6.1 点击目标
-   * 实测：顶栏与工具区有 15 个 28×28 的图标按钮，还有 24–25px 高的列表行/tab。
-   * 手指可靠命中区约为 40px，所以给带无障碍标签的按钮一个尺寸下限（只放大、
-   * 不缩小，已经够大的按钮不受影响）。这不违反「不碰布局」——那条约束针对的是
-   * 页面骨架（frame/drawer 的 grid 与定位），控件自身尺寸属于观感层。
+   * 实测：顶栏与工具区有 15 个 28×28 的图标按钮。直接给按钮 min-width/min-height
+   * 能解决命中问题，但会在顶栏里长出一圈 44px 的方框（真机截图看着笨重）。
+   * 改成「隐形命中区」：用 ::after 撑出 44×44 的透明层，手指照样可靠命中，
+   * 视觉尺寸完全不变。伪元素属于宿主按钮的盒子，点击它等于点击按钮本身。
    */
   button[aria-label],
   [role='button'][aria-label] {
-    min-width: 44px;
-    min-height: 44px;
+    position: relative;
+  }
+
+  button[aria-label]::after,
+  [role='button'][aria-label]::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+    background: transparent;
   }
 
   /* tab 是「横向排布的一排文字」，44px 会明显撑高面板头部，只抬到 36px。 */
