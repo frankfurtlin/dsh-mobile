@@ -389,7 +389,7 @@ const SCAN = () => {
   for (const el of document.querySelectorAll('button, a[href], [role="button"], input, select, textarea, summary')) {
     if (!visible(el)) continue
     const r = el.getBoundingClientRect()
-    if (r.width >= 44 && r.height >= 32) continue
+    if (r.width >= 40 && r.height >= 32) continue
     const cx = r.left + r.width / 2
     const cy = r.top + r.height / 2
     const left = reach(el, cx, cy, -1, 0)
@@ -398,7 +398,7 @@ const SCAN = () => {
     const down = reach(el, cx, cy, 0, 1)
     const effW = r.width + left.max + right.max
     const effH = r.height + up.max + down.max
-    if (effW >= 44 && effH >= 32) continue
+    if (effW >= 40 && effH >= 32) continue
     const clipped = clippedAncestor(el)
     smallTargets.push({
       path: pathOf(el),
@@ -634,8 +634,8 @@ for (const item of dom.overlays) {
 
 const fixableTargets = dom.smallTargets.filter((item) => !item.crowded && !item.clipped)
 const constrainedTargets = dom.smallTargets.filter((item) => item.crowded || item.clipped)
-if (fixableTargets.length > 0) note(fixableTargets.length >= 8 ? 'high' : 'medium', `${fixableTargets.length} 个点击目标小于 44px 且可安全扩大`)
-if (constrainedTargets.length > 0) note('low', `${constrainedTargets.length} 个点击目标小于 44px 但受结构限制（父级 overflow 裁切或紧邻控件），不扩大是正确取舍`)
+if (fixableTargets.length > 0) note(fixableTargets.length >= 8 ? 'high' : 'medium', `${fixableTargets.length} 个点击目标小于 40px 且可安全扩大`)
+if (constrainedTargets.length > 0) note('low', `${constrainedTargets.length} 个点击目标小于 40px 但受结构限制（父级 overflow 裁切或紧邻控件），不扩大是正确取舍`)
 if (dom.tinyText.length > 0) note(dom.tinyText.length >= 5 ? 'medium' : 'low', `${dom.tinyText.length} 处文字小于 12px`)
 
 const hoverOnly = pseudo.filter((p) => p.hoverOnly)
