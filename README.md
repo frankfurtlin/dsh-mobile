@@ -47,6 +47,7 @@ dsh-mobile/
 │  ├─ acceptance.mjs              # 自动化验收（80 项）
 │  ├─ check-anchors.mjs           # 移动插件 CSS 哈希漂移检测
 │  ├─ check-presentation.mjs      # 表现层插件：窄屏生效 + 宽屏零影响（15 项）
+│  ├─ check-mobile-layout.mjs     # 移动端体检：遮挡/溢出/小目标/伪状态 + 插件源码归因
 │  ├─ check-protocol-parity.mjs   # App/服务端/假手机三方 op 一致性检查
 │  ├─ probe-ws-auth.mjs           # 探测手机 WebSocket 鉴权门（4 种情况）
 │  ├─ restart-live.sh             # 延迟重启线上 dsh 并自动回滚
@@ -83,6 +84,10 @@ node tools/acceptance.mjs                # 80 项：工具链 / APK 与清单 / 
 node tools/acceptance.mjs --skip-gradle  # 无 Android SDK 的机器上跳过构建相关检查
 node tools/acceptance.mjs --skip-dsh     # 跳过依赖本机 ~/.dsh 与 /etc 部署状态的检查
 node tools/check-protocol-parity.mjs     # 只跑 App / 服务端 / 假手机 的三方 op 一致性（9 项）
+
+# 移动端体检（需要一台带目标插件集的实例在跑；脚本会读 profile 的 bundles 做源码扫描）
+node tools/check-mobile-layout.mjs --url "http://127.0.0.1:3098/?token=..." \
+  --profile layoutcheck --json docs/verification/mobile-layout.json
 node tools/probe-ws-auth.mjs             # 线上手机 WSS 鉴权门：无 Origin / 无 cookie / 假 cookie / 错 Origin（4 项）
 cd packages/bridge-server && node tools/smoke.mjs                 # bridge 端到端自测（91 项）
 cd packages/mobile-shell/android && ./gradlew testDebugUnitTest   # 端点/路径解析 + 凭证 blob 单测（24 项）

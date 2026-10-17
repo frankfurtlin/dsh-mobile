@@ -1,0 +1,968 @@
+{
+  "checkedAt": "2026-10-17T02:48:11.743Z",
+  "url": "http://127.0.0.1:3098/?token=***",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "profile": "layoutcheck",
+  "plugins": [
+    "@deepseek-ai/dsh-base",
+    "@deepseek-ai/dsh-web-app",
+    "dshmarket",
+    "@linxin666/dsh-client-ui-skill-explorer",
+    "@michengai/dsh-codex-pet",
+    "@deepseek-ai/dsh-experimental-agent-team-profile",
+    "@deepseek-ai/dsh-experimental-auto-review",
+    "dsh-explorer",
+    "dsh-mermaid",
+    "dsh-better-sidebar",
+    "billion-context",
+    "dsh-mobile-ux"
+  ],
+  "safeAreaBottom": 0,
+  "metaViewport": [
+    "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+  ],
+  "blockersOnLoad": [
+    {
+      "classes": "_root_o6lrb_6",
+      "id": null,
+      "role": "presentation",
+      "ariaLabel": null,
+      "text": "Preview NoticeDeepSeek Harness 0.2 is still in preview, and many areas need continued improvement and refinement. We wel",
+      "zIndex": "1000",
+      "background": "rgba(0, 0, 0, 0)",
+      "tappables": 1
+    }
+  ],
+  "findings": {
+    "overflow": [],
+    "pageOverflow": 0,
+    "scrollers": [],
+    "overlays": [],
+    "smallTargets": [
+      {
+        "path": "div.hHd-Xa_root > div.hHd-Xa_logoRow > button.hHd-Xa_brand.hHd-Xa_wide",
+        "w": 216,
+        "h": 24,
+        "label": "New session"
+      },
+      {
+        "path": "div.hHd-Xa_root > div.hHd-Xa_logoRow > button.hHd-Xa_iconButton.hHd-Xa_toggle",
+        "w": 28,
+        "h": 28,
+        "label": "Collapse sidebar"
+      },
+      {
+        "path": "div.bhn1Oq_searchSlot > div.bhn1Oq_search > button.bhn1Oq_searchButton",
+        "w": 28,
+        "h": 28,
+        "label": "Search sessions"
+      },
+      {
+        "path": "div.bhn1Oq_headerActions > span._root_4ub78_1 > button.bhn1Oq_iconButton.bhn1Oq_wide",
+        "w": 28,
+        "h": 28,
+        "label": "View options"
+      },
+      {
+        "path": "div > div.VoX2oq_root > button.VoX2oq_trigger",
+        "w": 28,
+        "h": 28,
+        "label": "Agent Team"
+      },
+      {
+        "path": "div.wSkVaW_headerUtilities > div > button.nArs4W_toggleButton",
+        "w": 28,
+        "h": 28,
+        "label": "Expand bottom panel"
+      },
+      {
+        "path": "div.wSkVaW_headerCorner > div > button._button_1rv3m_2._ghost_1rv3m_45",
+        "w": 28,
+        "h": 28,
+        "label": "Open right sidebar"
+      },
+      {
+        "path": "div > div.wSkVaW_tabs > button.wSkVaW_tab.wSkVaW_tabActive",
+        "w": 30,
+        "h": 25,
+        "label": "Chat"
+      },
+      {
+        "path": "div > div.wSkVaW_tabs > button.wSkVaW_tab",
+        "w": 64,
+        "h": 25,
+        "label": "Trajectory"
+      },
+      {
+        "path": "div.Sixlwa_userRow > div.xzv4MW_actions > button.xzv4MW_action",
+        "w": 28,
+        "h": 28,
+        "label": "Copy"
+      },
+      {
+        "path": "div.O_Ebla_root > div > button.O_Ebla_title",
+        "w": 158,
+        "h": 16,
+        "label": "Analysis completed"
+      },
+      {
+        "path": "div._root_k7ery_9 > div._header_k7ery_16 > div._row_k7ery_26.lcKema_row",
+        "w": 348,
+        "h": 24,
+        "label": "ThinkThe user wants a de"
+      },
+      {
+        "path": "div.TS9iAW_root > div.xzv4MW_actions.TS9iAW_actions > button.xzv4MW_action",
+        "w": 28,
+        "h": 28,
+        "label": "Copy"
+      },
+      {
+        "path": "div.xzv4MW_actions.TS9iAW_actions > div > button._8_XoUG_action",
+        "w": 28,
+        "h": 28,
+        "label": "Good response"
+      },
+      {
+        "path": "div.xzv4MW_actions.TS9iAW_actions > div > button._8_XoUG_action",
+        "w": 28,
+        "h": 28,
+        "label": "Bad response"
+      }
+    ],
+    "tinyText": [
+      {
+        "path": "span._root_38jqx_3 > div.YDXeBa_sessionRow.YDXeBa_selected > span.YDXeBa_time",
+        "fontSize": 10,
+        "text": "1d"
+      }
+    ],
+    "pseudo": [
+      {
+        "path": "button.hHd-Xa_brand.hHd-Xa_wide",
+        "label": "New session",
+        "activeRules": 11,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 10,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.hHd-Xa_iconButton.hHd-Xa_toggle",
+        "label": "Collapse sidebar",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.hHd-Xa_newSession",
+        "label": "New session",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.hHd-Xa_panelRow",
+        "label": "Plugins",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.hHd-Xa_panelRow",
+        "label": "Automation tasks",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.hHd-Xa_panelRow",
+        "label": "Skill Center",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.bhn1Oq_searchButton",
+        "label": "Search sessions",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.bhn1Oq_iconButton.bhn1Oq_wide",
+        "label": "View options",
+        "activeRules": 11,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 11,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.VOzbGW_trigger",
+        "label": "Settings",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.VoX2oq_trigger",
+        "label": "Agent Team",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.nArs4W_toggleButton",
+        "label": "Expand bottom panel",
+        "activeRules": 11,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 11,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.3s, 0.3s"
+      },
+      {
+        "path": "button._button_1rv3m_2._ghost_1rv3m_45",
+        "label": "Open right sidebar",
+        "activeRules": 12,
+        "activeCss": [
+          "box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-width: medi",
+          "height: 28px; font-size: 12px; line-height: 18px; padding: 0px 10px; border-radius: var(--dsw-radius-sm);"
+        ],
+        "hoverRules": 11,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.wSkVaW_tab.wSkVaW_tabActive",
+        "label": "Chat",
+        "activeRules": 11,
+        "activeCss": [
+          "app-region: no-drag;",
+          "font-family: inherit;"
+        ],
+        "hoverRules": 10,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.wSkVaW_tab",
+        "label": "Trajectory",
+        "activeRules": 10,
+        "activeCss": [
+          "app-region: no-drag;",
+          "font-family: inherit;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.xzv4MW_action",
+        "label": "Copy",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.l_V-RG_root",
+        "label": "Completed in 7s",
+        "activeRules": 10,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 10,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.O_Ebla_title",
+        "label": "Analysis completed",
+        "activeRules": 10,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 10,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "div._row_k7ery_26.lcKema_row",
+        "label": "ThinkThe user wants",
+        "activeRules": 12,
+        "activeCss": [
+          "flex: 1 1 auto; position: relative; overflow: hidden; display: flex; align-items: center; height: calc(24px + var(--dsh-",
+          "cursor: pointer;"
+        ],
+        "hoverRules": 12,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.xzv4MW_action",
+        "label": "Copy",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button._8_XoUG_action",
+        "label": "Good response",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button._8_XoUG_action",
+        "label": "Bad response",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.xzv4MW_action",
+        "label": "Branch into a new conversation",
+        "activeRules": 9,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 9,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.Q51KRG_trigger",
+        "label": "Usage 9.6K tok",
+        "activeRules": 10,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 10,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.uV2eYG_add",
+        "label": "Add files or run commands",
+        "activeRules": 11,
+        "activeCss": [
+          "font-family: inherit;",
+          "-webkit-tap-highlight-color: transparent;"
+        ],
+        "hoverRules": 11,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      }
+    ]
+  },
+  "source": [
+    {
+      "name": "dshmarket",
+      "version": "1.66.7",
+      "files": 49,
+      "kb": 1941,
+      "hits": [
+        {
+          "key": "position:fixed",
+          "level": "high",
+          "why": "固定浮层在窄屏上容易压住正文",
+          "count": 4,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "position:fixed"
+            },
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "position:fixed"
+            }
+          ]
+        },
+        {
+          "key": "100vh",
+          "level": "high",
+          "why": "手机可视区小于 100vh（地址栏/手势条），弹层会被裁",
+          "count": 2,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "100vh"
+            },
+            {
+              "file": "node_modules/dshmarket/src/client/Market.module.css",
+              "line": 317,
+              "text": "100vh"
+            }
+          ]
+        },
+        {
+          "key": "min-width:NNNpx",
+          "level": "high",
+          "why": "最小宽度超过 390px 会顶出横向滚动",
+          "count": 1,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 7011,
+              "text": "min-width: 681px"
+            }
+          ]
+        },
+        {
+          "key": "font-size<12px",
+          "level": "medium",
+          "why": "小于 12px 的文字在手机上难读",
+          "count": 123,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "font-size:11px"
+            },
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "font-size:11px"
+            }
+          ]
+        },
+        {
+          "key": "width:NNNpx",
+          "level": "medium",
+          "why": "固定宽度可能撑破窄屏",
+          "count": 2,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "width:460px"
+            },
+            {
+              "file": "node_modules/dshmarket/src/client/Market.module.css",
+              "line": 613,
+              "text": "width:460px"
+            }
+          ]
+        },
+        {
+          "key": ":hover",
+          "level": "low",
+          "why": "触屏没有 hover，只靠它显示的操作等于不可用",
+          "count": 69,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": ":hover"
+            },
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": ":hover"
+            }
+          ]
+        },
+        {
+          "key": "z-index>=100",
+          "level": "low",
+          "why": "高 z-index 叠加容易互相盖住",
+          "count": 2,
+          "samples": [
+            {
+              "file": "node_modules/dshmarket/client/client.js",
+              "line": 2852,
+              "text": "z-index:10000"
+            },
+            {
+              "file": "node_modules/dshmarket/src/client/Market.module.css",
+              "line": 122,
+              "text": "z-index:10000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@linxin666/dsh-client-ui-skill-explorer",
+      "version": "0.4.6",
+      "files": 2,
+      "kb": 105,
+      "hits": [
+        {
+          "key": "font-size<12px",
+          "level": "medium",
+          "why": "小于 12px 的文字在手机上难读",
+          "count": 5,
+          "samples": [
+            {
+              "file": "node_modules/@linxin666/dsh-client-ui-skill-explorer/lib/client.js",
+              "line": 382,
+              "text": "font-size:11px"
+            },
+            {
+              "file": "node_modules/@linxin666/dsh-client-ui-skill-explorer/lib/client.js",
+              "line": 382,
+              "text": "font-size:11px"
+            }
+          ]
+        },
+        {
+          "key": ":hover",
+          "level": "low",
+          "why": "触屏没有 hover，只靠它显示的操作等于不可用",
+          "count": 6,
+          "samples": [
+            {
+              "file": "node_modules/@linxin666/dsh-client-ui-skill-explorer/lib/client.js",
+              "line": 382,
+              "text": ":hover"
+            },
+            {
+              "file": "node_modules/@linxin666/dsh-client-ui-skill-explorer/lib/client.js",
+              "line": 382,
+              "text": ":hover"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@michengai/dsh-codex-pet",
+      "version": "0.1.19",
+      "files": 2,
+      "kb": 160,
+      "hits": [
+        {
+          "key": "position:fixed",
+          "level": "high",
+          "why": "固定浮层在窄屏上容易压住正文",
+          "count": 3,
+          "samples": [
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 521,
+              "text": "position:fixed"
+            },
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 1288,
+              "text": "position:fixed"
+            }
+          ]
+        },
+        {
+          "key": "100vh",
+          "level": "high",
+          "why": "手机可视区小于 100vh（地址栏/手势条），弹层会被裁",
+          "count": 2,
+          "samples": [
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 521,
+              "text": "100vh"
+            },
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 521,
+              "text": "100vh"
+            }
+          ]
+        },
+        {
+          "key": "font-size<12px",
+          "level": "medium",
+          "why": "小于 12px 的文字在手机上难读",
+          "count": 6,
+          "samples": [
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 1269,
+              "text": "font-size:11px"
+            },
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 1269,
+              "text": "font-size:10px"
+            }
+          ]
+        },
+        {
+          "key": ":hover",
+          "level": "low",
+          "why": "触屏没有 hover，只靠它显示的操作等于不可用",
+          "count": 9,
+          "samples": [
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 520,
+              "text": ":hover"
+            },
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 521,
+              "text": ":hover"
+            }
+          ]
+        },
+        {
+          "key": "z-index>=100",
+          "level": "low",
+          "why": "高 z-index 叠加容易互相盖住",
+          "count": 3,
+          "samples": [
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 521,
+              "text": "z-index:2147483647"
+            },
+            {
+              "file": "node_modules/@michengai/dsh-codex-pet/lib/client.js",
+              "line": 1288,
+              "text": "z-index:2147483000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dsh-mermaid",
+      "version": "0.4.2",
+      "files": 5,
+      "kb": 3399,
+      "hits": [
+        {
+          "key": "position:fixed",
+          "level": "high",
+          "why": "固定浮层在窄屏上容易压住正文",
+          "count": 1,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mermaid/lib/client.js",
+              "line": 25,
+              "text": "position:fixed"
+            }
+          ]
+        },
+        {
+          "key": "font-size<12px",
+          "level": "medium",
+          "why": "小于 12px 的文字在手机上难读",
+          "count": 8,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mermaid/lib/mermaid-runtime.js",
+              "line": 2067,
+              "text": "font-size: 10px"
+            },
+            {
+              "file": "node_modules/dsh-mermaid/lib/mermaid-runtime.js",
+              "line": 2162,
+              "text": "font-size: 10px"
+            }
+          ]
+        },
+        {
+          "key": "z-index>=100",
+          "level": "low",
+          "why": "高 z-index 叠加容易互相盖住",
+          "count": 4,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mermaid/lib/client.js",
+              "line": 25,
+              "text": "z-index:2147483000"
+            },
+            {
+              "file": "node_modules/dsh-mermaid/lib/mermaid-runtime.js",
+              "line": 1069,
+              "text": "z-index: 100"
+            }
+          ]
+        },
+        {
+          "key": ":hover",
+          "level": "low",
+          "why": "触屏没有 hover，只靠它显示的操作等于不可用",
+          "count": 2,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mermaid/lib/client.js",
+              "line": 7,
+              "text": ":hover"
+            },
+            {
+              "file": "node_modules/dsh-mermaid/lib/mermaid-runtime.js",
+              "line": 1774,
+              "text": ":hover"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dsh-better-sidebar",
+      "version": "0.26.0",
+      "files": 20,
+      "kb": 6926,
+      "hits": [
+        {
+          "key": "position:fixed",
+          "level": "high",
+          "why": "固定浮层在窄屏上容易压住正文",
+          "count": 43,
+          "samples": [
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 7658,
+              "text": "position: fixed"
+            },
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 7914,
+              "text": "position: fixed"
+            }
+          ]
+        },
+        {
+          "key": "100vh",
+          "level": "high",
+          "why": "手机可视区小于 100vh（地址栏/手势条），弹层会被裁",
+          "count": 5,
+          "samples": [
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 22543,
+              "text": "100vh"
+            },
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-registry.js",
+              "line": 4316,
+              "text": "100vh"
+            }
+          ]
+        },
+        {
+          "key": "font-size<12px",
+          "level": "medium",
+          "why": "小于 12px 的文字在手机上难读",
+          "count": 121,
+          "samples": [
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-registry.js",
+              "line": 5234,
+              "text": "font-size:10px"
+            },
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-registry.js",
+              "line": 10286,
+              "text": "font-size:11px"
+            }
+          ]
+        },
+        {
+          "key": ":hover",
+          "level": "low",
+          "why": "触屏没有 hover，只靠它显示的操作等于不可用",
+          "count": 287,
+          "samples": [
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 22543,
+              "text": ":hover"
+            },
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 22543,
+              "text": ":hover"
+            }
+          ]
+        },
+        {
+          "key": "z-index>=100",
+          "level": "low",
+          "why": "高 z-index 叠加容易互相盖住",
+          "count": 18,
+          "samples": [
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 22543,
+              "text": "z-index:1001"
+            },
+            {
+              "file": "node_modules/dsh-better-sidebar/lib/client-editor.js",
+              "line": 22543,
+              "text": "z-index:1002"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dsh-mobile-ux",
+      "version": "0.2.0",
+      "files": 6,
+      "kb": 254,
+      "hits": [
+        {
+          "key": "position:fixed",
+          "level": "high",
+          "why": "固定浮层在窄屏上容易压住正文",
+          "count": 8,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mobile-ux/client.js",
+              "line": 75,
+              "text": "position: fixed"
+            },
+            {
+              "file": "node_modules/dsh-mobile-ux/client.js",
+              "line": 401,
+              "text": "position: fixed"
+            }
+          ]
+        },
+        {
+          "key": "100vh",
+          "level": "high",
+          "why": "手机可视区小于 100vh（地址栏/手势条），弹层会被裁",
+          "count": 1,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mobile-ux/vendor/dsh-mobile-xc/lib/index.js",
+              "line": 37,
+              "text": "100vh"
+            }
+          ]
+        },
+        {
+          "key": "z-index>=100",
+          "level": "low",
+          "why": "高 z-index 叠加容易互相盖住",
+          "count": 6,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mobile-ux/client.js",
+              "line": 96,
+              "text": "z-index: 1000"
+            },
+            {
+              "file": "node_modules/dsh-mobile-ux/client.js",
+              "line": 411,
+              "text": "z-index: 1200"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "attribution": [],
+  "summary": {
+    "critical": 0,
+    "high": 1,
+    "medium": 5,
+    "low": 2
+  }
+}
