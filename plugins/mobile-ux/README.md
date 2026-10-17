@@ -76,7 +76,8 @@ window.__dshMobileUx.presentation.audit()   // { narrow, anchors, missing }
 
 能治的：字号/行距/段落间距、占位文字对比度、滚动回弹、点击高亮、滚动条占位、
 深色微调、移动布局/抽屉/安全区（骨架半）、移动端隐藏遮挡正文的第三方浮层
-（`dsh-codex-pet` 的 `dcp-*` UI，桌面保留）。
+（`dsh-codex-pet` 的 `dcp-*` UI，桌面保留）、点击目标尺寸下限（44×44）与宽内容
+不撑破视口（`tools/check-mobile-layout.mjs` 实测驱动）。
 
 治不了的（WebView 固有，需原生实现）：长按弹出的浏览器文本选择菜单、文本选择手柄样式、
 原生导航/返回手势过渡、触觉反馈、页面切换动画。

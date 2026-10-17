@@ -37,7 +37,7 @@ const vendorClient = await readFile(vendorClientPath, 'utf8')
  * hides on phones. Their absence is not drift: the plugin may simply not be
  * installed, so they are audited separately and never fail the drift check.
  */
-const OPTIONAL_PREFIXES = ['dcp-']
+const OPTIONAL_PREFIXES = ['dcp-', '_tab']
 
 /**
  * Every `[class*="…"]` fragment used by the presentation stylesheet,

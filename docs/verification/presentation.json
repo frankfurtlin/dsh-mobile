@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-17T02:19:59.406Z",
+  "generatedAt": "2026-10-17T02:54:21.715Z",
   "url": "http://127.0.0.1:3099/?token=<redacted>",
   "mobile": {
     "styleInjected": true,
@@ -15,7 +15,8 @@
       "anchors": 3,
       "missing": [],
       "optionalMissing": [
-        "dcp-"
+        "dcp-",
+        "_tabList"
       ]
     }
   },
@@ -33,7 +34,8 @@
       "anchors": 3,
       "missing": [],
       "optionalMissing": [
-        "dcp-"
+        "dcp-",
+        "_tabList"
       ]
     }
   },

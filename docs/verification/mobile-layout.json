@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-17T02:48:11.743Z",
+  "checkedAt": "2026-10-17T02:53:47.080Z",
   "url": "http://127.0.0.1:3098/?token=***",
   "viewport": {
     "w": 390,
@@ -43,66 +43,6 @@
     "overlays": [],
     "smallTargets": [
       {
-        "path": "div.hHd-Xa_root > div.hHd-Xa_logoRow > button.hHd-Xa_brand.hHd-Xa_wide",
-        "w": 216,
-        "h": 24,
-        "label": "New session"
-      },
-      {
-        "path": "div.hHd-Xa_root > div.hHd-Xa_logoRow > button.hHd-Xa_iconButton.hHd-Xa_toggle",
-        "w": 28,
-        "h": 28,
-        "label": "Collapse sidebar"
-      },
-      {
-        "path": "div.bhn1Oq_searchSlot > div.bhn1Oq_search > button.bhn1Oq_searchButton",
-        "w": 28,
-        "h": 28,
-        "label": "Search sessions"
-      },
-      {
-        "path": "div.bhn1Oq_headerActions > span._root_4ub78_1 > button.bhn1Oq_iconButton.bhn1Oq_wide",
-        "w": 28,
-        "h": 28,
-        "label": "View options"
-      },
-      {
-        "path": "div > div.VoX2oq_root > button.VoX2oq_trigger",
-        "w": 28,
-        "h": 28,
-        "label": "Agent Team"
-      },
-      {
-        "path": "div.wSkVaW_headerUtilities > div > button.nArs4W_toggleButton",
-        "w": 28,
-        "h": 28,
-        "label": "Expand bottom panel"
-      },
-      {
-        "path": "div.wSkVaW_headerCorner > div > button._button_1rv3m_2._ghost_1rv3m_45",
-        "w": 28,
-        "h": 28,
-        "label": "Open right sidebar"
-      },
-      {
-        "path": "div > div.wSkVaW_tabs > button.wSkVaW_tab.wSkVaW_tabActive",
-        "w": 30,
-        "h": 25,
-        "label": "Chat"
-      },
-      {
-        "path": "div > div.wSkVaW_tabs > button.wSkVaW_tab",
-        "w": 64,
-        "h": 25,
-        "label": "Trajectory"
-      },
-      {
-        "path": "div.Sixlwa_userRow > div.xzv4MW_actions > button.xzv4MW_action",
-        "w": 28,
-        "h": 28,
-        "label": "Copy"
-      },
-      {
         "path": "div.O_Ebla_root > div > button.O_Ebla_title",
         "w": 158,
         "h": 16,
@@ -115,22 +55,10 @@
         "label": "ThinkThe user wants a de"
       },
       {
-        "path": "div.TS9iAW_root > div.xzv4MW_actions.TS9iAW_actions > button.xzv4MW_action",
+        "path": "span.xzv4MW_endInfo > span.Q51KRG_root > button.Q51KRG_trigger",
         "w": 28,
         "h": 28,
-        "label": "Copy"
-      },
-      {
-        "path": "div.xzv4MW_actions.TS9iAW_actions > div > button._8_XoUG_action",
-        "w": 28,
-        "h": 28,
-        "label": "Good response"
-      },
-      {
-        "path": "div.xzv4MW_actions.TS9iAW_actions > div > button._8_XoUG_action",
-        "w": 28,
-        "h": 28,
-        "label": "Bad response"
+        "label": "Usage 9.6K tok"
       }
     ],
     "tinyText": [
@@ -144,12 +72,12 @@
       {
         "path": "button.hHd-Xa_brand.hHd-Xa_wide",
         "label": "New session",
-        "activeRules": 11,
+        "activeRules": 12,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 10,
+        "hoverRules": 11,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -157,12 +85,12 @@
       {
         "path": "button.hHd-Xa_iconButton.hHd-Xa_toggle",
         "label": "Collapse sidebar",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -170,12 +98,12 @@
       {
         "path": "button.hHd-Xa_newSession",
         "label": "New session",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -183,12 +111,12 @@
       {
         "path": "button.hHd-Xa_panelRow",
         "label": "Plugins",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -196,12 +124,12 @@
       {
         "path": "button.hHd-Xa_panelRow",
         "label": "Automation tasks",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -209,12 +137,12 @@
       {
         "path": "button.hHd-Xa_panelRow",
         "label": "Skill Center",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -222,12 +150,12 @@
       {
         "path": "button.bhn1Oq_searchButton",
         "label": "Search sessions",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -235,12 +163,12 @@
       {
         "path": "button.bhn1Oq_iconButton.bhn1Oq_wide",
         "label": "View options",
-        "activeRules": 11,
+        "activeRules": 12,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 11,
+        "hoverRules": 12,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -248,12 +176,12 @@
       {
         "path": "button.VOzbGW_trigger",
         "label": "Settings",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -261,12 +189,12 @@
       {
         "path": "button.VoX2oq_trigger",
         "label": "Agent Team",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -274,12 +202,12 @@
       {
         "path": "button.nArs4W_toggleButton",
         "label": "Expand bottom panel",
-        "activeRules": 11,
+        "activeRules": 12,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 11,
+        "hoverRules": 12,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.3s, 0.3s"
@@ -287,12 +215,12 @@
       {
         "path": "button._button_1rv3m_2._ghost_1rv3m_45",
         "label": "Open right sidebar",
-        "activeRules": 12,
+        "activeRules": 13,
         "activeCss": [
           "box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-width: medi",
           "height: 28px; font-size: 12px; line-height: 18px; padding: 0px 10px; border-radius: var(--dsw-radius-sm);"
         ],
-        "hoverRules": 11,
+        "hoverRules": 12,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -300,6 +228,19 @@
       {
         "path": "button.wSkVaW_tab.wSkVaW_tabActive",
         "label": "Chat",
+        "activeRules": 12,
+        "activeCss": [
+          "app-region: no-drag;",
+          "font-family: inherit;"
+        ],
+        "hoverRules": 11,
+        "hoverOnly": false,
+        "hoverMediaGuarded": false,
+        "transition": "0.1s"
+      },
+      {
+        "path": "button.wSkVaW_tab",
+        "label": "Trajectory",
         "activeRules": 11,
         "activeCss": [
           "app-region: no-drag;",
@@ -311,27 +252,14 @@
         "transition": "0.1s"
       },
       {
-        "path": "button.wSkVaW_tab",
-        "label": "Trajectory",
-        "activeRules": 10,
-        "activeCss": [
-          "app-region: no-drag;",
-          "font-family: inherit;"
-        ],
-        "hoverRules": 9,
-        "hoverOnly": false,
-        "hoverMediaGuarded": false,
-        "transition": "0.1s"
-      },
-      {
         "path": "button.xzv4MW_action",
         "label": "Copy",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -378,12 +306,12 @@
       {
         "path": "button.xzv4MW_action",
         "label": "Copy",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -391,12 +319,12 @@
       {
         "path": "button._8_XoUG_action",
         "label": "Good response",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -404,12 +332,12 @@
       {
         "path": "button._8_XoUG_action",
         "label": "Bad response",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -417,12 +345,12 @@
       {
         "path": "button.xzv4MW_action",
         "label": "Branch into a new conversation",
-        "activeRules": 9,
+        "activeRules": 10,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 9,
+        "hoverRules": 10,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -443,12 +371,12 @@
       {
         "path": "button.uV2eYG_add",
         "label": "Add files or run commands",
-        "activeRules": 11,
+        "activeRules": 12,
         "activeCss": [
           "font-family: inherit;",
           "-webkit-tap-highlight-color: transparent;"
         ],
-        "hoverRules": 11,
+        "hoverRules": 12,
         "hoverOnly": false,
         "hoverMediaGuarded": false,
         "transition": "0.1s"
@@ -904,7 +832,7 @@
       "name": "dsh-mobile-ux",
       "version": "0.2.0",
       "files": 6,
-      "kb": 254,
+      "kb": 257,
       "hits": [
         {
           "key": "position:fixed",
@@ -954,6 +882,24 @@
               "text": "z-index: 1200"
             }
           ]
+        },
+        {
+          "key": ":hover",
+          "level": "low",
+          "why": "触屏没有 hover，只靠它显示的操作等于不可用",
+          "count": 2,
+          "samples": [
+            {
+              "file": "node_modules/dsh-mobile-ux/client.js",
+              "line": 2200,
+              "text": ":hover"
+            },
+            {
+              "file": "node_modules/dsh-mobile-ux/styles/mobile.css",
+              "line": 234,
+              "text": ":hover"
+            }
+          ]
         }
       ]
     }
@@ -961,8 +907,8 @@
   "attribution": [],
   "summary": {
     "critical": 0,
-    "high": 1,
-    "medium": 5,
+    "high": 0,
+    "medium": 6,
     "low": 2
   }
 }

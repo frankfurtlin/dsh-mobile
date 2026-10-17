@@ -181,4 +181,59 @@
   [class*='dcp-'] {
     display: none !important;
   }
+
+  /* ==========================================================
+   * 6. 移动端规范化（L1：只认结构特征，不认插件名）
+   *
+   * 数据来源：tools/check-mobile-layout.mjs 在 390×844 下对真实插件集实测，
+   * 报告见 docs/verification/mobile-layout.json。这一层的选择器都是元素/属性/
+   * 语义片段级，插件改名、重写、升级都不会让它出错——命不中即空转。
+   * ========================================================== */
+
+  /*
+   * 6.1 点击目标
+   * 实测：顶栏与工具区有 15 个 28×28 的图标按钮，还有 24–25px 高的列表行/tab。
+   * 手指可靠命中区约为 40px，所以给带无障碍标签的按钮一个尺寸下限（只放大、
+   * 不缩小，已经够大的按钮不受影响）。这不违反「不碰布局」——那条约束针对的是
+   * 页面骨架（frame/drawer 的 grid 与定位），控件自身尺寸属于观感层。
+   */
+  button[aria-label],
+  [role='button'][aria-label] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* tab 是「横向排布的一排文字」，44px 会明显撑高面板头部，只抬到 36px。 */
+  [class*='_tabs'] > button,
+  [class*='_tabList'] > button {
+    min-width: 44px;
+    min-height: 36px;
+  }
+
+  /*
+   * 6.2 宽内容不撑破视口
+   * 实测：插件市场（dshmarket）自带 min-width 超过 390px 的规则，一张表/一段
+   * 代码就能把整页推成可横向滚动。这里只约束媒体与代码块，表格交给它自己的
+   * 滚动容器——给 table 强行 display:block 会破坏单元格布局。
+   */
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  pre {
+    max-width: 100% !important;
+    overflow-x: auto;
+  }
+
+  /*
+   * 没有采纳的两条（体检数据不支撑，写进去只是负债）：
+   *   - hover-only 可见性兜底：实测 24 个可点元素里 0 个「只有 :hover 没有
+   *     :active」，触屏上并没有点不出来的操作；
+   *   - 全局字号下限：实测只有 1 处 10px（会话列表的时间戳），而 CSS 无法按
+   *     「计算后字号」选中元素，为它写一条类名规则不划算。
+   */
 }
