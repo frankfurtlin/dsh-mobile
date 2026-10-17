@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T20:17:10.685Z",
+  "generatedAt": "2026-10-17T02:19:59.406Z",
   "url": "http://127.0.0.1:3099/?token=<redacted>",
   "mobile": {
     "styleInjected": true,
@@ -13,7 +13,10 @@
     "audit": {
       "narrow": true,
       "anchors": 3,
-      "missing": []
+      "missing": [],
+      "optionalMissing": [
+        "dcp-"
+      ]
     }
   },
   "desktop": {
@@ -28,7 +31,10 @@
     "audit": {
       "narrow": false,
       "anchors": 3,
-      "missing": []
+      "missing": [],
+      "optionalMissing": [
+        "dcp-"
+      ]
     }
   },
   "results": [
